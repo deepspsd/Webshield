@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report a Website - WebShield</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center">
+  <div class="bg-slate-800 rounded-2xl shadow-2xl p-10 w-full max-w-xl">
+    <div class="flex items-center justify-center mb-6">
+      <a href="dashboard.html" class="flex items-center gap-2">
+        <span class="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-xl">🛡️</span>
+        <span class="text-2xl font-bold text-cyan-400">WebShield</span>
+      </a>
+    </div>
+    <h2 class="text-3xl font-bold text-cyan-400 mb-6 text-center">Report a Website</h2>
+    <div id="reportMessage" class="mb-6 p-4 rounded-lg text-center hidden"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Blacklist Form -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2 text-red-300">Report website for activity</h3>
+        <form id="blacklistForm" class="space-y-4">
+          <input type="text" name="url" required placeholder="Suspicious URL (e.g. http://bad.com)" class="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+          <input type="text" name="reason" placeholder="Reason (optional)" class="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+          <button type="submit" class="w-full bg-red-500 hover:bg-red-600 py-2 rounded-lg font-semibold text-white transition">Report to Blacklist</button>
+        </form>
+      </div>
+      <!-- Whitelist Form -->
+      <div>
+        <h3 class="text-xl font-semibold mb-2 text-green-300">Found a good website? Tell us here...</h3>
+        <form id="whitelistForm" class="space-y-4">
+          <input type="text" name="url" required placeholder="Good URL (e.g. https://good.com)" class="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+          <input type="text" name="added_by" placeholder="Your name (optional)" class="w-full px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+          <button type="submit" class="w-full bg-green-500 hover:bg-green-600 py-2 rounded-lg font-semibold text-white transition">Add to Whitelist</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    const msgDiv = document.getElementById('reportMessage');
+    function showMsg(msg, success=true) {
+      msgDiv.textContent = msg;
+      msgDiv.className = 'mb-6 p-4 rounded-lg text-center ' + (success ? 'bg-green-700/30 text-green-300' : 'bg-red-700/30 text-red-300');
+      msgDiv.classList.remove('hidden');
+    }
+    document.getElementById('blacklistForm').onsubmit = async function(e) {
+      e.preventDefault();
+      let url = this.url.value.trim();
+      const reason = this.reason.value.trim();
+      if (url && !/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      console.log('Submitting blacklist:', url, reason);
+      try {
+        const res = await fetch('/api/report_blacklist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, reason })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showMsg('URL reported as malicious (blacklist).', true);
+          this.reset();
+        } else {
+          showMsg(data.detail || 'Failed to report URL.', false);
+        }
+      } catch (err) {
+        showMsg('Network error.', false);
+      }
+    };
+    document.getElementById('whitelistForm').onsubmit = async function(e) {
+      e.preventDefault();
+      let url = this.url.value.trim();
+      const added_by = this.added_by.value.trim();
+      if (url && !/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      console.log('Submitting whitelist:', url, added_by);
+      try {
+        const res = await fetch('/api/report_whitelist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, added_by })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showMsg('URL reported as clean (whitelist).', true);
+          this.reset();
+        } else {
+          showMsg(data.detail || 'Failed to report URL.', false);
+        }
+      } catch (err) {
+        showMsg('Network error.', false);
+      }
+    };
+  </script>
+</body>
+</html> 

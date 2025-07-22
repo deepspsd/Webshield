@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scan Result - WebShield</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background: linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%); color: #fff; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+  <div class="w-full max-w-2xl bg-slate-800 rounded-2xl shadow-2xl p-8 mt-12">
+    <div class="flex items-center justify-center mb-6">
+      <a href="dashboard.html" class="flex items-center gap-2">
+        <span class="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-xl">🛡️</span>
+        <span class="text-2xl font-bold text-cyan-400">WebShield</span>
+      </a>
+    </div>
+    <h1 class="text-3xl font-bold text-cyan-400 mb-6 text-center">Scan Result</h1>
+    <div id="scanResultBox" class="mb-6"></div>
+    <a href="dashboard.html" class="block text-center bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">Back to Dashboard</a>
+  </div>
+  <script>
+    // Helper to get scan_id from URL
+    function getScanId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('scan_id');
+    }
+    function formatIssuer(issuer) {
+      if (!issuer) return 'N/A';
+      if (typeof issuer === 'string') return issuer;
+      if (Array.isArray(issuer)) {
+        // If it's an array of objects, join their values
+        return issuer.map(obj => Object.values(obj).join(' ')).join(', ');
+      }
+      if (typeof issuer === 'object') {
+        return Object.values(issuer).join(' ');
+      }
+      return String(issuer);
+    }
+    async function loadScanResult() {
+      const scanId = getScanId();
+      const box = document.getElementById('scanResultBox');
+      if (!scanId) {
+        box.innerHTML = '<div class="text-red-400">No scan ID provided.</div>';
+        return;
+      }
+      box.innerHTML = '<span class="text-gray-400">Loading scan result…</span>';
+      try {
+        const res = await fetch(`/api/scan/${scanId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Scan not found');
+        if (!data.results) {
+          box.innerHTML = '<div class="text-yellow-400">Scan is still processing or incomplete.</div>';
+          return;
+        }
+        const r = data.results;
+        const safe = !r.is_malicious;
+        const color = safe ? 'text-green-400' : r.threat_level === 'high' ? 'text-red-400' : 'text-yellow-400';
+        const details = r.detection_details || {};
+        const urlAnalysis = details.url_analysis || {};
+        const sslAnalysis = details.ssl_analysis || {};
+        const contentAnalysis = details.content_analysis || {};
+        const vtAnalysis = details.virustotal_analysis || {};
+        box.innerHTML = `
+          <div class="${color} font-semibold text-lg text-center mb-4">
+            ${safe ? '✅ Safe' : `⚠️ ${r.threat_level.toUpperCase()} RISK`}<br>
+            <span class="text-base text-gray-300">${r.url}</span>
+          </div>
+          <div class="grid gap-8">
+            <div class="bg-slate-900 rounded-xl p-4">
+              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔎 URL Pattern Analysis</h3>
+              <div><b>Suspicious Score:</b> ${urlAnalysis.suspicious_score ?? 'N/A'}</div>
+              <div><b>Detected Issues:</b> <ul class="list-disc ml-6 text-sm">${(urlAnalysis.detected_issues||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
+              <div><b>Domain:</b> ${urlAnalysis.domain || 'N/A'}</div>
+              <div><b>Is Suspicious:</b> ${urlAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
+            </div>
+            <div class="bg-slate-900 rounded-xl p-4">
+              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔒 SSL Certificate</h3>
+              <div><b>Valid:</b> ${sslAnalysis.valid === true ? 'Yes' : sslAnalysis.valid === false ? 'No' : 'N/A'}</div>
+              <div><b>Issuer:</b> ${formatIssuer(sslAnalysis.issuer)}</div>
+              <div><b>Expires:</b> ${sslAnalysis.expires || 'N/A'}</div>
+              <div><b>Error:</b> ${sslAnalysis.error || 'None'}</div>
+            </div>
+            <div class="bg-slate-900 rounded-xl p-4">
+              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🕵️ Content Analysis</h3>
+              <div><b>Phishing Score:</b> ${contentAnalysis.phishing_score ?? 'N/A'}</div>
+              <div><b>Detected Indicators:</b> <ul class="list-disc ml-6 text-sm">${(contentAnalysis.detected_indicators||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
+              <div><b>Is Suspicious:</b> ${contentAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
+              <div><b>Content Length:</b> ${contentAnalysis.content_length ?? 'N/A'}</div>
+              <div><b>Error:</b> ${contentAnalysis.error || 'None'}</div>
+            </div>
+            <div class="bg-slate-900 rounded-xl p-4">
+              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🦠 VirusTotal Analysis</h3>
+              <div><b>Malicious:</b> ${vtAnalysis.malicious_count ?? 'N/A'}</div>
+              <div><b>Suspicious:</b> ${vtAnalysis.suspicious_count ?? 'N/A'}</div>
+              <div><b>Total Engines:</b> ${vtAnalysis.total_engines ?? 'N/A'}</div>
+              <div><b>Reputation:</b> ${vtAnalysis.reputation ?? 'N/A'}</div>
+              <div><b>Error:</b> ${vtAnalysis.error || 'None'}</div>
+            </div>
+          </div>
+          <div class="mt-6 text-center text-gray-400 text-xs">Scan time: ${r.scan_timestamp ? new Date(r.scan_timestamp).toLocaleString() : ''}</div>
+        `;
+      } catch (err) {
+        box.innerHTML = `<div class="text-red-400">${err.message || 'Error loading scan result.'}</div>`;
+      }
+    }
+    loadScanResult();
+  </script>
+</body>
+</html> 
