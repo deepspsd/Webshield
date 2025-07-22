@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Profile - WebShield</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-slate-800 p-4 flex justify-between items-center shadow">
+    <a href="dashboard.html" class="flex items-center gap-2">
+      <span class="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-xl">🛡️</span>
+      <span class="text-2xl font-bold text-cyan-400">WebShield</span>
+    </a>
+    <a href="dashboard.html" class="text-sm text-cyan-300 hover:underline">← Back to Dashboard</a>
+  </header>
+
+  <!-- Profile Section -->
+  <section class="max-w-4xl mx-auto p-6">
+    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+      <div class="flex items-center space-x-6">
+        <img id="profilePic" src="https://i.imgur.com/1X4j2vV.png" class="w-20 h-20 rounded-full border-2 border-cyan-400 object-cover" alt="Profile Image">
+        <div>
+          <h2 id="profileName" class="text-2xl font-bold">User Name</h2>
+          <p class="text-sm text-gray-400">Registered User</p>
+          <form id="photoUploadForm" enctype="multipart/form-data" class="mt-2">
+            <input type="file" id="photoInput" name="file" accept="image/*" class="block text-sm text-gray-300 mb-2" style="max-width:200px;" />
+            <button type="submit" class="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-1 rounded text-sm">Update Photo</button>
+            <span id="photoUploadMsg" class="ml-2 text-xs"></span>
+          </form>
+        </div>
+      </div>
+
+      <div class="mt-6 border-t border-gray-700 pt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <h3 class="font-semibold text-cyan-400 mb-1">Email</h3>
+          <p id="profileEmail" class="text-gray-300">user@email.com</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-cyan-400 mb-1">Joined</h3>
+          <p class="text-gray-300">July 2025</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-cyan-400 mb-1">Last Login</h3>
+          <p class="text-gray-300">16 July 2025, 7:00 PM</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-cyan-400 mb-1">Account Type</h3>
+          <p class="text-gray-300">Standard</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings & History -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      <!-- Account Settings -->
+      <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold text-cyan-400 mb-4">⚙️ Account Settings</h3>
+        <ul class="space-y-3">
+          <li>
+            <a href="#" onclick="openModal('editProfileModal')" class="hover:underline text-white">Edit Profile Info</a>
+          </li>
+          <li>
+            <a href="#" onclick="openModal('changePasswordModal')" class="hover:underline text-white">Change Password</a>
+          </li>
+          <li>
+            <a href="#" onclick="openModal('notificationModal')" class="hover:underline text-white">Notification Preferences</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- History -->
+      <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold text-cyan-400 mb-4">�� Recent Scans</h3>
+        <div class="overflow-x-auto">
+          <table class="table-auto w-full text-left border-collapse">
+            <thead class="text-cyan-200 border-b border-cyan-800">
+              <tr>
+                <th class="pb-2">Date</th>
+                <th class="pb-2">Website</th>
+                <th class="pb-2">Result</th>
+                <th class="pb-2">Details</th>
+              </tr>
+            </thead>
+            <tbody id="profileScanHistoryBody" class="text-blue-100">
+              <!-- JS will populate rows here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="mt-6 text-right">
+      <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-semibold">Logout</button>
+      <a href="dashboard.html" class="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-xl font-semibold ml-2">Back to Dashboard</a>
+    </div>
+  </section>
+
+  <!-- ============================
+       MODALS FOR ACCOUNT SETTINGS
+       ============================ -->
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
+      <button onclick="closeModal('editProfileModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
+      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Edit Profile Info</h2>
+      <form action="/update_profile" method="POST" onsubmit="closeModal('editProfileModal')">
+        <label class="block mb-2 text-sm text-gray-300">Full Name</label>
+        <input type="text" name="name" value="{{ user.name }}" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+        <label class="block mb-2 text-sm text-gray-300">Email</label>
+        <input type="email" name="email" value="{{ user.email }}" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
+      <button onclick="closeModal('changePasswordModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
+      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Change Password</h2>
+      <form action="/change_password" method="POST" onsubmit="closeModal('changePasswordModal')">
+        <label class="block mb-2 text-sm text-gray-300">Current Password</label>
+        <input type="password" name="old_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
+        <label class="block mb-2 text-sm text-gray-300">New Password</label>
+        <input type="password" name="new_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
+        <label class="block mb-2 text-sm text-gray-300">Confirm New Password</label>
+        <input type="password" name="confirm_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
+        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
+          Update Password
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Preferences Modal -->
+  <div id="notificationModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
+      <button onclick="closeModal('notificationModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
+      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Notification Preferences</h2>
+      <form onsubmit="submitNotificationPreferences(event)">
+        <label class="block mb-2 text-sm text-gray-300">Email Notifications:</label>
+        <select class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
+          <option>Receive all notifications</option>
+          <option>Only important alerts</option>
+          <option>Do not send notifications</option>
+        </select>
+        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
+          Save Preferences
+        </button>
+      </form>
+    </div>
+  </div>
+
+<script>
+// Load user info from localStorage
+const name = localStorage.getItem('user_name') || 'User Name';
+const email = localStorage.getItem('user_email') || 'user@email.com';
+document.getElementById('profileName').textContent = name;
+document.getElementById('profileEmail').textContent = email;
+
+// Fetch and show profile photo if available
+fetch(`/api/get_user?email=${encodeURIComponent(email)}`)
+  .then(res => res.json())
+  .then(user => {
+    if (user && user.profile_pic) {
+      document.getElementById('profilePic').src = `/profile_pics/${user.profile_pic}`;
+    } else {
+      document.getElementById('profilePic').src = 'https://i.imgur.com/1X4j2vV.png';
+      if (!user) console.log('User not found for email:', email);
+    }
+  })
+  .catch(() => {
+    document.getElementById('profilePic').src = 'https://i.imgur.com/1X4j2vV.png';
+    console.log('Error fetching user info for profile photo.');
+  });
+
+// Handle profile photo upload
+const photoForm = document.getElementById('photoUploadForm');
+const photoInput = document.getElementById('photoInput');
+const photoMsg = document.getElementById('photoUploadMsg');
+photoForm.onsubmit = async function(e) {
+  e.preventDefault();
+  if (!photoInput.files.length) {
+    photoMsg.textContent = 'Please select a photo.';
+    photoMsg.className = 'text-red-400 ml-2 text-xs';
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', photoInput.files[0]);
+  formData.append('email', email);
+  photoMsg.textContent = 'Uploading...';
+  photoMsg.className = 'text-gray-300 ml-2 text-xs';
+  try {
+    const res = await fetch('/api/upload_profile_photo', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('profilePic').src = data.url + '?t=' + Date.now();
+      photoMsg.textContent = 'Photo updated!';
+      photoMsg.className = 'text-green-400 ml-2 text-xs';
+    } else {
+      photoMsg.textContent = data.detail || 'Upload failed.';
+      photoMsg.className = 'text-red-400 ml-2 text-xs';
+    }
+  } catch (err) {
+    photoMsg.textContent = 'Network error.';
+    photoMsg.className = 'text-red-400 ml-2 text-xs';
+  }
+};
+// Logout functionality
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.onclick = function() {
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_email');
+    window.location.href = 'login.html';
+  };
+}
+
+// Fetch and render recent scans in profile
+fetch('/api/history?limit=5')
+  .then(res => res.json())
+  .then(data => {
+    const tbody = document.getElementById('profileScanHistoryBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-2">No scan history found.</td></tr>';
+      return;
+    }
+    data.forEach(scan => {
+      tbody.innerHTML += `
+        <tr class="border-b border-cyan-800">
+          <td class="py-2">${scan.created_at ? new Date(scan.created_at).toLocaleString() : ''}</td>
+          <td>${scan.url || ''}</td>
+          <td class="${scan.is_malicious ? 'text-red-300' : 'text-green-300'}">${scan.threat_level || ''}</td>
+          <td>${scan.status || ''}</td>
+        </tr>
+      `;
+    });
+  })
+  .catch(() => {
+    const tbody = document.getElementById('profileScanHistoryBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-2">Error loading history.</td></tr>';
+  });
+</script>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan Results</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold mb-4 flex items-center">
+            <span class="mr-2">📝</span> Scan Results
+        </h1>
+        <div class="flex items-center mb-4">
+            {% if result.threat_level == 'low' %}
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Low Risk
+                </span>
+            {% elif result.threat_level == 'medium' %}
+                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full flex items-center">
+                    ⚠️ Medium Risk
+                </span>
+            {% else %}
+                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center">
+                    ❌ High Risk
+                </span>
+            {% endif %}
+        </div>
+        <div class="mb-2">
+            <span class="font-semibold">URL:</span>
+            <span class="bg-gray-100 px-2 py-1 rounded">{{ result.url }}</span>
+        </div>
+        <div class="mb-6 text-gray-500 text-sm">
+            Scanned: {{ result.scan_timestamp.strftime('%m/%d/%Y, %I:%M:%S %p') if result.scan_timestamp else '' }}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-red-50 p-4 rounded text-center">
+                <div class="text-2xl font-bold text-red-600">{{ result.malicious_count }}</div>
+                <div class="text-sm text-red-700">Malicious Detections</div>
+            </div>
+            <div class="bg-yellow-50 p-4 rounded text-center">
+                <div class="text-2xl font-bold text-yellow-600">{{ result.suspicious_count }}</div>
+                <div class="text-sm text-yellow-700">Suspicious Detections</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ result.total_engines }}</div>
+                <div class="text-sm text-blue-700">Total Engines</div>
+            </div>
+            <div class="bg-green-50 p-4 rounded text-center">
+                <div class="text-2xl font-bold {% if result.ssl_valid %}text-green-600{% else %}text-red-600{% endif %}">
+                    {{ 'Valid' if result.ssl_valid else 'Invalid' }}
+                </div>
+                <div class="text-sm text-green-700">SSL Certificate</div>
+            </div>
+        </div>
+
+        <!-- URL Analysis -->
+        <div class="mb-4 border rounded p-4">
+            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🔗</span> URL Analysis</h2>
+            <div><b>Domain:</b> {{ result.detection_details.url_analysis.domain }}</div>
+            <div><b>Suspicious Score:</b> {{ result.detection_details.url_analysis.suspicious_score }}</div>
+            {% if result.detection_details.url_analysis.detected_issues %}
+                <div class="mt-2">
+                    <b>Issues:</b>
+                    <ul class="list-disc ml-6">
+                        {% for issue in result.detection_details.url_analysis.detected_issues %}
+                            <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Content Analysis -->
+        <div class="mb-4 border rounded p-4">
+            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">📄</span> Content Analysis</h2>
+            <div><b>Phishing Score:</b> {{ result.detection_details.content_analysis.phishing_score }}</div>
+            <div><b>Suspicious:</b> {{ 'Yes' if result.detection_details.content_analysis.is_suspicious else 'No' }}</div>
+            {% if result.detection_details.content_analysis.detected_indicators %}
+                <div class="mt-2">
+                    <b>Indicators:</b>
+                    <ul class="list-disc ml-6">
+                        {% for ind in result.detection_details.content_analysis.detected_indicators %}
+                            <li>{{ ind }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- VirusTotal Analysis -->
+        <div class="mb-4 border rounded p-4">
+            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🦠</span> VirusTotal Analysis</h2>
+            <div><b>Malicious:</b> {{ result.detection_details.virustotal_analysis.malicious_count }}</div>
+            <div><b>Suspicious:</b> {{ result.detection_details.virustotal_analysis.suspicious_count }}</div>
+            <div><b>Total Engines:</b> {{ result.detection_details.virustotal_analysis.total_engines }}</div>
+            {% if result.detection_details.virustotal_analysis.engines_results %}
+                <div class="mt-2">
+                    <b>Engine Results:</b>
+                    <ul class="list-disc ml-6">
+                        {% for engine, verdict in result.detection_details.virustotal_analysis.engines_results.items() %}
+                            <li>{{ engine }}: {{ verdict.category }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- SSL Certificate -->
+        <div class="mb-4 border rounded p-4">
+            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🔒</span> SSL Certificate</h2>
+            <div><b>Valid:</b> {{ 'Yes' if result.ssl_valid else 'No' }}</div>
+        </div>
+    </div>
+</body>
+</html> 
