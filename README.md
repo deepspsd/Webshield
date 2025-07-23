@@ -15,6 +15,7 @@ WebShield is a powerful web application designed to protect users from online th
 - **Scan History**: Keeps a record of all scans performed by the user
 - **Dashboard**: Provides a central hub for scanning URLs and viewing a summary of recent activity
 - **Statistical Overview**: Displays aggregate data on total scans, threats detected, and more
+- **Chrome Extension Integration**: Direct link to install the WebShield Chrome extension for seamless browser protection
 
 ## ✨ Live Demo
 
@@ -36,6 +37,9 @@ While a live demo isn't available in this repository, the project is designed to
 - **Tailwind CSS**: For a modern and responsive user interface
 - **JavaScript**: For dynamic content and interacting with the backend API
 - **Chart.js**: For visualizing scan statistics
+
+### Browser Extension
+- **Chrome Extension**: Provides real-time protection while browsing
 
 ### Services
 - **VirusTotal API**: For comprehensive threat analysis
@@ -89,6 +93,7 @@ While a live demo isn't available in this repository, the project is designed to
 
 2. **Access the application:**
    - Open your web browser and navigate to the application URL
+   - Use the "Add Extension" button to install the Chrome extension for enhanced protection
 
 ## 🧪 Running Tests
 
