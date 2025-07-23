@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; background: #181f2a; color: #fff; margin: 0; padding: 1rem; }
+h2, h3 { color: #00bcd4; }
+input, select, button { margin: 0.5rem 0; padding: 0.5rem; border-radius: 5px; border: none; }
+button { background: #00bcd4; color: #fff; cursor: pointer; }
+button:hover { background: #0097a7; }
+#popup-root { min-width: 300px; } 
