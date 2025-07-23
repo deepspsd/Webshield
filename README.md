@@ -40,6 +40,20 @@ While a live demo isn't available in this repository, the project is designed to
 
 ### Browser Extension
 - **Extension**: Provides real-time protection while browsing
+- 1. Account Management & Sync:
+  Login/logout UI in popup.html/popup.js
+  Store token in chrome.storage
+  Sync scan history, stats, and settings via backend API
+- 2. Real-Time URL Protection:
+  content.js intercepts navigation, sends URL to background.js
+  background.js checks URL with backend, blocks if malicious
+  Shows warning overlay, updates extension icon, supports whitelist
+- 3. Smart Notifications:
+  background.js uses chrome.notifications for alerts, summaries, risk scores
+  options.js allows user to set notification preferences
+- 4. Quick Actions:
+  Context menu for scanning/reporting URLs
+  Popup for quick settings and emergency disable
 
 ### Services
 - **VirusTotal API**: For comprehensive threat analysis
