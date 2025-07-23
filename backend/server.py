@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Form, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Form, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 import mysql.connector
@@ -22,6 +22,10 @@ from fastapi.responses import FileResponse
 from passlib.hash import bcrypt
 from fastapi import Request
 import shutil
+from fastapi.middleware.gzip import GZipMiddleware
+import time
+from functools import lru_cache
+from threading import Thread
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +41,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Optional: Serve index.html at root (for direct / access)
 @app.get("/")
@@ -205,11 +211,20 @@ SUSPICIOUS_URL_PATTERNS = [
 
 SUSPICIOUS_TLDS = ['.tk', '.ml', '.ga', '.cf', '.info', '.click', '.download', '.stream']
 
-PHISHING_KEYWORDS = [
-    'verify', 'suspend', 'limited', 'security', 'confirm', 'update', 'login',
-    'account', 'bank', 'paypal', 'amazon', 'microsoft', 'google', 'apple',
-    'urgent', 'immediate', 'expired', 'locked', 'restricted'
-]
+PHISHING_KEYWORDS = {
+    # Urgency / pressure
+    'verify', 'suspend', 'suspended', 'limited', 'restriction', 'restricted',
+    'confirm', 'update', 'unlock', 'locked', 'expire', 'expired', 'urgent',
+    'immediately', 'immediate', 'alert',
+
+    # High-value targets for spoofing
+    'paypal', 'amazon', 'microsoft', 'outlook', 'google', 'gmail', 'apple',
+    'icloud', 'netflix', 'ebay', 'wells fargo', 'bank of america', 'chase',
+    'hsbc', 'citibank', 'usbank', 'barclays', 'lloyds', 'santander',
+
+    # Common credential hooks
+    'login', 'authentication', 'authenticate', 'password', 'credential'
+}
 
 class WebShieldDetector:
     def __init__(self):
@@ -330,14 +345,14 @@ class WebShieldDetector:
                 'details': 'SSL certificate validation failed'
             }
     
-    async def analyze_content(self, url: str) -> Dict[str, Any]:
+    async def analyze_content(self, url: str, max_bytes=200*1024) -> Dict[str, Any]:
         """Analyze webpage content for phishing indicators"""
         try:
             async with self.session.get(url, timeout=10) as response:
                 if response.status != 200:
                     return {'error': f'HTTP {response.status}', 'phishing_score': 0}
-                
-                content = await response.text()
+                content = await response.content.read(max_bytes)
+                content = content.decode(errors='ignore')
                 
                 phishing_score = 0
                 detected_indicators = []
@@ -479,6 +494,20 @@ detector = WebShieldDetector()
 PROFILE_PICS_DIR = "frontend/public/profile_pics"
 os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
 
+# In-memory cache for scan results (simple dict with expiry)
+SCAN_CACHE = {}
+CACHE_TTL = 600  # 10 minutes
+SCAN_IN_PROGRESS = {}  # url: scan_id
+
+def get_cached_scan(url):
+    entry = SCAN_CACHE.get(url)
+    if entry and time.time() - entry['ts'] < CACHE_TTL:
+        return entry['result']
+    return None
+
+def set_cached_scan(url, result):
+    SCAN_CACHE[url] = {'result': result, 'ts': time.time()}
+
 @app.post("/api/upload_profile_photo")
 def upload_profile_photo(email: str = Form(...), file: UploadFile = File(...)):
     conn = get_mysql_connection()
@@ -552,36 +581,71 @@ def login_user(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     return {"success": True, "name": user.get("name", ""), "email": user["email"]}
 
-@app.post("/api/scan", response_model=ThreatReport)
-async def scan_url(request: URLScanRequest):
-    """Comprehensive URL scanning endpoint"""
+@app.post("/api/change_password")
+def change_password(data: dict = Body(...)):
+    email = data.get("email")
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    if not email or not old_password or not new_password:
+        raise HTTPException(status_code=400, detail="Missing required fields.")
+    conn = get_mysql_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection error")
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT password FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    if not user or not bcrypt.verify(old_password, user['password']):
+        cursor.close()
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+    hashed_pw = bcrypt.hash(new_password)
+    cursor.execute("UPDATE users SET password = %s WHERE email = %s", (hashed_pw, email))
+    conn.commit()
+    cursor.close()
+    return {"success": True}
+
+@app.post("/api/update_profile")
+def update_profile(data: dict = Body(...)):
+    email = data.get("email")
+    name = data.get("name")
+    if not email or not name:
+        raise HTTPException(status_code=400, detail="Missing required fields.")
+    conn = get_mysql_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection error")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET name = %s, email = %s WHERE email = %s", (name, email, email))
+    conn.commit()
+    cursor.close()
+    return {"success": True}
+
+@app.post("/api/notification_preferences")
+def notification_preferences(data: dict = Body(...)):
+    # For now, just return success. You can extend this to store preferences in the DB.
+    return {"success": True}
+
+async def _do_scan(url: str, scan_id: str):
+    """Background task to perform the actual scan."""
+    import logging
+    logger = logging.getLogger("scan")
+    start_time = time.time()
     try:
-        url = request.url
-        if not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
-        scan_id = hashlib.md5(f"{url}{datetime.now().isoformat()}".encode()).hexdigest()
-        # Store initial scan request in MySQL
-        conn = get_mysql_connection()
-        if conn:
-            cursor = conn.cursor()
-            print("Inserting status:", 'processing')
-            insert_query = """
-            INSERT INTO scans (scan_id, url, status, created_at)
-            VALUES (%s, %s, %s, %s)
-            """
-            cursor.execute(insert_query, (scan_id, url, 'processing', datetime.now()))
-            conn.commit()
-            cursor.close()
-        # Database health check
-        db_health = {'database': 'connected' if conn and conn.is_connected() else 'disconnected'}
-        # Start comprehensive analysis
         async with WebShieldDetector() as detector_instance:
+            # Aggressive timeouts for all checks
+            async def with_timeout(coro, timeout, label):
+                t0 = time.time()
+                try:
+                    result = await asyncio.wait_for(coro, timeout=timeout)
+                    logger.info(f"{label} completed in {time.time()-t0:.2f}s")
+                    return result
+                except Exception as e:
+                    logger.warning(f"{label} failed or timed out: {e}")
+                    return {'error': str(e)}
+            url_analysis_task = asyncio.to_thread(detector_instance.analyze_url_patterns, url)
+            ssl_task = with_timeout(detector_instance.analyze_ssl_certificate(url), 5, 'SSL')
+            content_task = with_timeout(detector_instance.analyze_content(url, max_bytes=200*1024), 5, 'Content')
+            vt_task = with_timeout(detector_instance.check_virustotal(url), 7, 'VirusTotal')
             url_analysis, ssl_analysis, content_analysis, vt_analysis = await asyncio.gather(
-                asyncio.create_task(asyncio.to_thread(detector_instance.analyze_url_patterns, url)),
-                detector_instance.analyze_ssl_certificate(url),
-                detector_instance.analyze_content(url),
-                detector_instance.check_virustotal(url),
-                return_exceptions=True
+                url_analysis_task, ssl_task, content_task, vt_task, return_exceptions=True
             )
             malicious_count = vt_analysis.get('malicious_count', 0) if isinstance(vt_analysis, dict) else 0
             suspicious_count = vt_analysis.get('suspicious_count', 0) if isinstance(vt_analysis, dict) else 0
@@ -608,7 +672,7 @@ async def scan_url(request: URLScanRequest):
                 'ssl_analysis': ssl_analysis if isinstance(ssl_analysis, dict) else {'error': str(ssl_analysis)},
                 'content_analysis': content_analysis if isinstance(content_analysis, dict) else {'error': str(content_analysis)},
                 'virustotal_analysis': vt_analysis if isinstance(vt_analysis, dict) else {'error': str(vt_analysis)},
-                'database_health': db_health
+                'database_health': {'database': 'connected' if get_mysql_connection() and get_mysql_connection().is_connected() else 'disconnected'}
             }
             result = ScanResult(
                 url=url,
@@ -623,9 +687,10 @@ async def scan_url(request: URLScanRequest):
                 content_analysis=content_analysis if isinstance(content_analysis, dict) else {},
                 scan_timestamp=datetime.now()
             )
+            conn = get_mysql_connection()
             if conn:
                 cursor = conn.cursor()
-                print("Updating status:", 'completed')
+                logger.info("Updating status: completed")
                 update_query = """
                 UPDATE scans SET 
                     status = %s, 
@@ -650,32 +715,16 @@ async def scan_url(request: URLScanRequest):
                 ))
                 conn.commit()
                 cursor.close()
-                update_stats_query = """
-                INSERT INTO scan_statistics (date, total_scans, malicious_detected, clean_scans)
-                VALUES (CURDATE(), 1, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                total_scans = total_scans + 1,
-                malicious_detected = malicious_detected + %s,
-                clean_scans = clean_scans + %s
-                """
-                cursor = conn.cursor()
-                cursor.execute(update_stats_query, (
-                    1 if is_malicious else 0,
-                    0 if is_malicious else 1,
-                    1 if is_malicious else 0,
-                    0 if is_malicious else 1
-                ))
-                conn.commit()
-                cursor.close()
-            return ThreatReport(
+            logger.info(f"Total scan time: {time.time()-start_time:.2f}s")
+            resp = ThreatReport(
                 scan_id=scan_id,
                 url=url,
                 status='completed',
                 results=result
             )
+            set_cached_scan(url, resp)
     except Exception as e:
         logger.error(f"Scan error: {str(e)}")
-        # Set status to 'error' if possible
         conn = get_mysql_connection()
         if conn:
             cursor = conn.cursor()
@@ -683,7 +732,47 @@ async def scan_url(request: URLScanRequest):
             cursor.execute("UPDATE scans SET status = %s WHERE scan_id = %s", ('error', scan_id))
             conn.commit()
             cursor.close()
-        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+
+@app.post("/api/scan", response_model=ThreatReport)
+async def scan_url(request: URLScanRequest):
+    """Non-blocking scan: returns scan_id immediately, runs scan in background if needed."""
+    import logging
+    logger = logging.getLogger("scan")
+    url = request.url
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    cached = get_cached_scan(url)
+    if cached:
+        logger.info(f"Cache hit for {url}")
+        return cached
+    if url in SCAN_IN_PROGRESS:
+        scan_id = SCAN_IN_PROGRESS[url]
+        return ThreatReport(scan_id=scan_id, url=url, status='processing', results=None)
+    scan_id = hashlib.md5(f"{url}{datetime.now().isoformat()}".encode()).hexdigest()
+    SCAN_IN_PROGRESS[url] = scan_id
+    # Insert processing status in DB
+    conn = get_mysql_connection()
+    if conn:
+        cursor = conn.cursor()
+        logger.info("Inserting status: processing")
+        insert_query = """
+        INSERT INTO scans (scan_id, url, status, created_at)
+        VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, (scan_id, url, 'processing', datetime.now()))
+        conn.commit()
+        cursor.close()
+    def run_scan():
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(_do_scan(url, scan_id))
+        except Exception as e:
+            logger.error(f"Background scan error: {e}")
+        finally:
+            SCAN_IN_PROGRESS.pop(url, None)
+    Thread(target=run_scan, daemon=True).start()
+    return ThreatReport(scan_id=scan_id, url=url, status='processing', results=None)
 
 @app.post("/api/report_blacklist")
 def report_blacklist(request: ReportRequest):
@@ -757,11 +846,7 @@ async def get_scan_result(scan_id: str):
                         'threat_level': scan['threat_level'],
                         'malicious_count': scan['malicious_count'],
                         'suspicious_count': scan['suspicious_count'],
-                        'total_engines': scan['total_engines'],
-                        'ssl_valid': scan['ssl_valid'],
-                        'domain_reputation': scan['domain_reputation'],
-                        'detection_details': scan['detection_details'],
-                        'scan_timestamp': scan['scan_timestamp']
+                        'total_engines': scan['total_engines']
                     } if scan['status'] == 'completed' else None,
                     'created_at': scan['created_at'],
                     'completed_at': scan['completed_at']
