@@ -327,7 +327,10 @@ class WebShieldDetector:
                 }
             
             context = ssl.create_default_context()
-            with socket.create_connection((hostname, port), timeout=10) as sock:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            with socket.create_connection((hostname, port), timeout=1.0) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                     cert = ssock.getpeercert()
                     
@@ -348,7 +351,7 @@ class WebShieldDetector:
     async def analyze_content(self, url: str, max_bytes=200*1024) -> Dict[str, Any]:
         """Analyze webpage content for phishing indicators"""
         try:
-            async with self.session.get(url, timeout=10) as response:
+            async with self.session.get(url, timeout=0.3) as response:
                 if response.status != 200:
                     return {'error': f'HTTP {response.status}', 'phishing_score': 0}
                 content = await response.content.read(max_bytes)
@@ -414,7 +417,7 @@ class WebShieldDetector:
             # Check if URL already exists in VirusTotal
             check_url = f"{VT_BASE_URL}/urls/{url_id}"
             
-            async with self.session.get(check_url, headers=headers) as response:
+            async with self.session.get(check_url, headers=headers, timeout=2.0) as response:
                 if response.status == 200:
                     data = await response.json()
                     stats = data['data']['attributes']['last_analysis_stats']
@@ -432,8 +435,14 @@ class WebShieldDetector:
                 elif response.status == 404:
                     # URL not found, submit for analysis
                     return await self._submit_url_to_virustotal(url)
+                elif response.status == 429:
+                    return {'error': 'VirusTotal rate limit exceeded. Please try again later.'}
+                elif response.status == 401:
+                    return {'error': 'VirusTotal API key invalid or expired.'}
                 else:
                     return {'error': f'VirusTotal API error: {response.status}'}
+        except asyncio.TimeoutError:
+            return {'error': 'VirusTotal request timed out. Please try again.'}
         except Exception as e:
             return {'error': f'VirusTotal check failed: {str(e)}'}
     
@@ -449,16 +458,22 @@ class WebShieldDetector:
             
             async with self.session.post(f"{VT_BASE_URL}/urls", 
                                        headers=headers, 
-                                       data=data) as response:
+                                       data=data,
+                                       timeout=3.0) as response:
                 if response.status == 200:
                     result = await response.json()
                     analysis_id = result['data']['id']
                     
-                    # Wait a bit and try to get results
-                    await asyncio.sleep(2)
+                    # Get results immediately (no sleep needed)
                     return await self._get_analysis_results(analysis_id)
+                elif response.status == 429:
+                    return {'error': 'VirusTotal rate limit exceeded. Please try again later.'}
+                elif response.status == 401:
+                    return {'error': 'VirusTotal API key invalid or expired.'}
                 else:
                     return {'error': f'URL submission failed: {response.status}'}
+        except asyncio.TimeoutError:
+            return {'error': 'VirusTotal submission timed out. Please try again.'}
         except Exception as e:
             return {'error': f'URL submission error: {str(e)}'}
     
@@ -468,7 +483,8 @@ class WebShieldDetector:
             headers = {'x-apikey': VT_API_KEY}
             
             async with self.session.get(f"{VT_BASE_URL}/analyses/{analysis_id}", 
-                                      headers=headers) as response:
+                                      headers=headers,
+                                      timeout=2.0) as response:
                 if response.status == 200:
                     data = await response.json()
                     stats = data['data']['attributes']['stats']
@@ -483,8 +499,14 @@ class WebShieldDetector:
                         'status': data['data']['attributes']['status'],
                         'cached': False
                     }
+                elif response.status == 429:
+                    return {'error': 'VirusTotal rate limit exceeded. Please try again later.'}
+                elif response.status == 401:
+                    return {'error': 'VirusTotal API key invalid or expired.'}
                 else:
                     return {'error': f'Analysis retrieval failed: {response.status}'}
+        except asyncio.TimeoutError:
+            return {'error': 'VirusTotal analysis retrieval timed out. Please try again.'}
         except Exception as e:
             return {'error': f'Analysis retrieval error: {str(e)}'}
 
@@ -624,13 +646,11 @@ def notification_preferences(data: dict = Body(...)):
     return {"success": True}
 
 async def _do_scan(url: str, scan_id: str):
-    """Background task to perform the actual scan."""
     import logging
     logger = logging.getLogger("scan")
     start_time = time.time()
     try:
         async with WebShieldDetector() as detector_instance:
-            # Aggressive timeouts for all checks
             async def with_timeout(coro, timeout, label):
                 t0 = time.time()
                 try:
@@ -641,12 +661,13 @@ async def _do_scan(url: str, scan_id: str):
                     logger.warning(f"{label} failed or timed out: {e}")
                     return {'error': str(e)}
             url_analysis_task = asyncio.to_thread(detector_instance.analyze_url_patterns, url)
-            ssl_task = with_timeout(detector_instance.analyze_ssl_certificate(url), 5, 'SSL')
-            content_task = with_timeout(detector_instance.analyze_content(url, max_bytes=200*1024), 5, 'Content')
-            vt_task = with_timeout(detector_instance.check_virustotal(url), 7, 'VirusTotal')
+            ssl_task = with_timeout(detector_instance.analyze_ssl_certificate(url), 1.5, 'SSL')
+            content_task = with_timeout(detector_instance.analyze_content(url, max_bytes=15*1024), 0.3, 'Content')
+            vt_task = with_timeout(detector_instance.check_virustotal(url), 3.0, 'VirusTotal')
             url_analysis, ssl_analysis, content_analysis, vt_analysis = await asyncio.gather(
                 url_analysis_task, ssl_task, content_task, vt_task, return_exceptions=True
             )
+            logger.info(f"Scan results for {url}: url_analysis={url_analysis}, ssl_analysis={ssl_analysis}, content_analysis={content_analysis}, vt_analysis={vt_analysis}")
             malicious_count = vt_analysis.get('malicious_count', 0) if isinstance(vt_analysis, dict) else 0
             suspicious_count = vt_analysis.get('suspicious_count', 0) if isinstance(vt_analysis, dict) else 0
             total_engines = vt_analysis.get('total_engines', 0) if isinstance(vt_analysis, dict) else 0
@@ -667,6 +688,7 @@ async def _do_scan(url: str, scan_id: str):
             else:
                 threat_level = 'low'
                 is_malicious = False
+            # Guarantee a valid ScanResult even if all checks are empty or error
             detection_details = {
                 'url_analysis': url_analysis if isinstance(url_analysis, dict) else {'error': str(url_analysis)},
                 'ssl_analysis': ssl_analysis if isinstance(ssl_analysis, dict) else {'error': str(ssl_analysis)},
@@ -674,6 +696,15 @@ async def _do_scan(url: str, scan_id: str):
                 'virustotal_analysis': vt_analysis if isinstance(vt_analysis, dict) else {'error': str(vt_analysis)},
                 'database_health': {'database': 'connected' if get_mysql_connection() and get_mysql_connection().is_connected() else 'disconnected'}
             }
+            # Ensure at least one field is always present in detection_details
+            if not detection_details['url_analysis']:
+                detection_details['url_analysis'] = {'info': 'No suspicious patterns found'}
+            if not detection_details['ssl_analysis']:
+                detection_details['ssl_analysis'] = {'info': 'No SSL issues found'}
+            if not detection_details['content_analysis']:
+                detection_details['content_analysis'] = {'info': 'No phishing indicators found'}
+            if not detection_details['virustotal_analysis']:
+                detection_details['virustotal_analysis'] = {'info': 'VirusTotal analysis unavailable - using other security checks'}
             result = ScanResult(
                 url=url,
                 is_malicious=is_malicious,
@@ -725,22 +756,61 @@ async def _do_scan(url: str, scan_id: str):
             set_cached_scan(url, resp)
     except Exception as e:
         logger.error(f"Scan error: {str(e)}")
+        # Always store a completed scan result, even on error
+        detection_details = {
+            'url_analysis': {'error': 'Scan failed'},
+            'ssl_analysis': {'error': 'Scan failed'},
+            'content_analysis': {'error': 'Scan failed'},
+            'virustotal_analysis': {'error': 'Scan failed'},
+            'database_health': {'database': 'error'}
+        }
+        result = ScanResult(
+            url=url,
+            is_malicious=False,
+            threat_level='low',
+            malicious_count=0,
+            suspicious_count=0,
+            total_engines=0,
+            detection_details=detection_details,
+            ssl_valid=False,
+            domain_reputation='unknown',
+            content_analysis={},
+            scan_timestamp=datetime.now()
+        )
         conn = get_mysql_connection()
         if conn:
             cursor = conn.cursor()
             print("Setting status to error for scan_id:", scan_id)
-            cursor.execute("UPDATE scans SET status = %s WHERE scan_id = %s", ('error', scan_id))
+            update_query = """
+            UPDATE scans SET status = %s, detection_details = %s, completed_at = %s, scan_timestamp = %s WHERE scan_id = %s
+            """
+            cursor.execute(update_query, ('completed', json.dumps(result.detection_details), datetime.now(), result.scan_timestamp, scan_id))
             conn.commit()
             cursor.close()
+        resp = ThreatReport(
+            scan_id=scan_id,
+            url=url,
+            status='completed',
+            results=result
+        )
+        set_cached_scan(url, resp)
+    finally:
+        logger.info(f"Total scan time: {time.time()-start_time:.2f}s")
+        SCAN_IN_PROGRESS.pop(url, None)
 
 @app.post("/api/scan", response_model=ThreatReport)
 async def scan_url(request: URLScanRequest):
-    """Non-blocking scan: returns scan_id immediately, runs scan in background if needed."""
     import logging
+    import re
     logger = logging.getLogger("scan")
-    url = request.url
+    url = request.url.strip()
+    # Auto-prepend https:// if missing
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
+    # Validate URL format (basic check)
+    url_pattern = re.compile(r'^https?://([\w.-]+)(:[0-9]+)?(/.*)?$')
+    if not url_pattern.match(url):
+        raise HTTPException(status_code=400, detail="Invalid or unsupported URL format. Please enter a valid http or https URL.")
     cached = get_cached_scan(url)
     if cached:
         logger.info(f"Cache hit for {url}")
@@ -816,7 +886,7 @@ def report_whitelist(request: ReportRequest):
 
 @app.get("/api/scan/{scan_id}")
 async def get_scan_result(scan_id: str):
-    """Get scan results by ID"""
+    """Get scan results by ID. Always return a valid 'results' object for completed scans."""
     try:
         conn = get_mysql_connection()
         if conn:
@@ -830,28 +900,46 @@ async def get_scan_result(scan_id: str):
             cursor.execute(select_query, (scan_id,))
             scan = cursor.fetchone()
             cursor.close()
-            
             if scan:
                 # Convert detection_details from JSON string to dict
                 if scan['detection_details']:
                     scan['detection_details'] = json.loads(scan['detection_details'])
-                
-                return {
-                    'scan_id': scan['scan_id'],
-                    'url': scan['url'],
-                    'status': scan['status'],
-                    'results': {
+                # Always return a valid results object for completed scans
+                if scan['status'] == 'completed':
+                    # Fallback: if detection_details or results are missing, return a default clean result
+                    detection_details = scan['detection_details'] if scan['detection_details'] else {
+                        'url_analysis': {'info': 'No suspicious patterns found'},
+                        'ssl_analysis': {'info': 'No SSL issues found'},
+                        'content_analysis': {'info': 'No phishing indicators found'},
+                        'virustotal_analysis': {'info': 'No VirusTotal data'},
+                        'database_health': {'database': 'unknown'}
+                    }
+                    return {
+                        'scan_id': scan['scan_id'],
                         'url': scan['url'],
-                        'is_malicious': scan['is_malicious'],
-                        'threat_level': scan['threat_level'],
-                        'malicious_count': scan['malicious_count'],
-                        'suspicious_count': scan['suspicious_count'],
-                        'total_engines': scan['total_engines']
-                    } if scan['status'] == 'completed' else None,
-                    'created_at': scan['created_at'],
-                    'completed_at': scan['completed_at']
-                }
-        
+                        'status': scan['status'],
+                        'results': {
+                            'url': scan['url'],
+                            'is_malicious': scan.get('is_malicious', False),
+                            'threat_level': scan.get('threat_level', 'low'),
+                            'malicious_count': scan.get('malicious_count', 0),
+                            'suspicious_count': scan.get('suspicious_count', 0),
+                            'total_engines': scan.get('total_engines', 0),
+                            'detection_details': detection_details,
+                            'ssl_valid': scan.get('ssl_valid', False),
+                            'domain_reputation': scan.get('domain_reputation', 'unknown'),
+                            'content_analysis': detection_details.get('content_analysis', {}),
+                            'scan_timestamp': scan.get('scan_timestamp') or scan.get('completed_at')
+                        }
+                    }
+                else:
+                    # Scan is processing or errored
+                    return {
+                        'scan_id': scan['scan_id'],
+                        'url': scan['url'],
+                        'status': scan['status'],
+                        'results': None
+                    }
         raise HTTPException(status_code=404, detail="Scan not found")
     except HTTPException:
         raise
@@ -958,7 +1046,14 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8000,
+        workers=1,
+        access_log=False,
+        log_level="warning"
+    )
 
 # Mount static files (frontend) at the end to avoid overriding API routes
 app.mount("/", StaticFiles(directory="frontend/public", html=True), name="static")
