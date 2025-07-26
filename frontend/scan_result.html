@@ -46,65 +46,106 @@
         box.innerHTML = '<div class="text-red-400">No scan ID provided.</div>';
         return;
       }
-      box.innerHTML = '<span class="text-gray-400">Loading scan result…</span>';
-      try {
-        const res = await fetch(`/api/scan/${scanId}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Scan not found');
-        if (!data.results) {
-          box.innerHTML = '<div class="text-yellow-400">Scan is still processing or incomplete.</div>';
-          return;
+      
+      // Show loading state with spinner
+      box.innerHTML = `
+                 <div class="text-center">
+           <div class="text-cyan-400 text-lg mb-2">⚡ Loading scan result...</div>
+           <div class="text-gray-400 text-sm">Dev tunnels optimized</div>
+         </div>
+      `;
+      
+             let attempts = 0;
+       const maxAttempts = 200; // 200 attempts (30 seconds max for dev tunnels)
+      
+      const pollResults = async () => {
+        try {
+          const res = await fetch(`/api/scan/${scanId}`);
+          const data = await res.json();
+          
+          if (!res.ok) {
+            throw new Error(data.detail || 'Scan not found');
+          }
+          
+          if (data.status === 'completed' && data.results) {
+            // Show results
+            displayResults(data.results);
+            return;
+          } else if (data.status === 'error') {
+            throw new Error('Scan failed');
+          } else {
+            // Still processing, continue polling
+            attempts++;
+            if (attempts < maxAttempts) {
+                             // Update loading message
+               box.innerHTML = `
+                 <div class="text-center">
+                   <div class="text-cyan-400 text-lg mb-2">⚡ Processing scan... (${attempts}/${maxAttempts})</div>
+                   <div class="text-gray-400 text-sm">Dev tunnels optimized polling</div>
+                 </div>
+               `;
+                             setTimeout(pollResults, 100); // Poll every 100ms for dev tunnels speed
+            } else {
+              throw new Error('Scan timeout - please try again');
+            }
+          }
+        } catch (err) {
+          box.innerHTML = `<div class="text-red-400 text-center">${err.message || 'Error loading scan result.'}</div>`;
         }
-        const r = data.results;
-        const safe = !r.is_malicious;
-        const color = safe ? 'text-green-400' : r.threat_level === 'high' ? 'text-red-400' : 'text-yellow-400';
-        const details = r.detection_details || {};
-        const urlAnalysis = details.url_analysis || {};
-        const sslAnalysis = details.ssl_analysis || {};
-        const contentAnalysis = details.content_analysis || {};
-        const vtAnalysis = details.virustotal_analysis || {};
-        box.innerHTML = `
-          <div class="${color} font-semibold text-lg text-center mb-4">
-            ${safe ? '✅ Safe' : `⚠️ ${r.threat_level.toUpperCase()} RISK`}<br>
-            <span class="text-base text-gray-300">${r.url}</span>
+      };
+      
+      // Start polling
+      pollResults();
+    }
+    
+         function displayResults(r) {
+       const box = document.getElementById('scanResultBox');
+       const safe = !r.is_malicious;
+       const color = safe ? 'text-green-400' : r.threat_level === 'high' ? 'text-red-400' : 'text-yellow-400';
+       const details = r.detection_details || {};
+       const urlAnalysis = details.url_analysis || {};
+       const sslAnalysis = details.ssl_analysis || {};
+       const contentAnalysis = details.content_analysis || {};
+       const vtAnalysis = details.virustotal_analysis || {};
+            box.innerHTML = `
+        <div class="${color} font-semibold text-lg text-center mb-4">
+          ${safe ? '✅ Safe' : `⚠️ ${r.threat_level.toUpperCase()} RISK`}<br>
+          <span class="text-base text-gray-300">${r.url}</span>
+        </div>
+        <div class="grid gap-8">
+          <div class="bg-slate-900 rounded-xl p-4">
+            <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔎 URL Pattern Analysis</h3>
+            <div><b>Suspicious Score:</b> ${urlAnalysis.suspicious_score ?? 'N/A'}</div>
+            <div><b>Detected Issues:</b> <ul class="list-disc ml-6 text-sm">${(urlAnalysis.detected_issues||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
+            <div><b>Domain:</b> ${urlAnalysis.domain || 'N/A'}</div>
+            <div><b>Is Suspicious:</b> ${urlAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
           </div>
-          <div class="grid gap-8">
-            <div class="bg-slate-900 rounded-xl p-4">
-              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔎 URL Pattern Analysis</h3>
-              <div><b>Suspicious Score:</b> ${urlAnalysis.suspicious_score ?? 'N/A'}</div>
-              <div><b>Detected Issues:</b> <ul class="list-disc ml-6 text-sm">${(urlAnalysis.detected_issues||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
-              <div><b>Domain:</b> ${urlAnalysis.domain || 'N/A'}</div>
-              <div><b>Is Suspicious:</b> ${urlAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
-            </div>
-            <div class="bg-slate-900 rounded-xl p-4">
-              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔒 SSL Certificate</h3>
-              <div><b>Valid:</b> ${sslAnalysis.valid === true ? 'Yes' : sslAnalysis.valid === false ? 'No' : 'N/A'}</div>
-              <div><b>Issuer:</b> ${formatIssuer(sslAnalysis.issuer)}</div>
-              <div><b>Expires:</b> ${sslAnalysis.expires || 'N/A'}</div>
-              <div><b>Error:</b> ${sslAnalysis.error || 'None'}</div>
-            </div>
-            <div class="bg-slate-900 rounded-xl p-4">
-              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🕵️ Content Analysis</h3>
-              <div><b>Phishing Score:</b> ${contentAnalysis.phishing_score ?? 'N/A'}</div>
-              <div><b>Detected Indicators:</b> <ul class="list-disc ml-6 text-sm">${(contentAnalysis.detected_indicators||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
-              <div><b>Is Suspicious:</b> ${contentAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
-              <div><b>Content Length:</b> ${contentAnalysis.content_length ?? 'N/A'}</div>
-              <div><b>Error:</b> ${contentAnalysis.error || 'None'}</div>
-            </div>
-            <div class="bg-slate-900 rounded-xl p-4">
-              <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🦠 VirusTotal Analysis</h3>
-              <div><b>Malicious:</b> ${vtAnalysis.malicious_count ?? 'N/A'}</div>
-              <div><b>Suspicious:</b> ${vtAnalysis.suspicious_count ?? 'N/A'}</div>
-              <div><b>Total Engines:</b> ${vtAnalysis.total_engines ?? 'N/A'}</div>
-              <div><b>Reputation:</b> ${vtAnalysis.reputation ?? 'N/A'}</div>
-              <div><b>Error:</b> ${vtAnalysis.error || 'None'}</div>
-            </div>
+          <div class="bg-slate-900 rounded-xl p-4">
+            <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🔒 SSL Certificate</h3>
+            <div><b>Valid:</b> ${sslAnalysis.valid === true ? 'Yes' : sslAnalysis.valid === false ? 'No' : 'N/A'}</div>
+            <div><b>Issuer:</b> ${formatIssuer(sslAnalysis.issuer)}</div>
+            <div><b>Expires:</b> ${sslAnalysis.expires || 'N/A'}</div>
+            <div><b>Error:</b> ${sslAnalysis.error || 'None'}</div>
           </div>
-          <div class="mt-6 text-center text-gray-400 text-xs">Scan time: ${r.scan_timestamp ? new Date(r.scan_timestamp).toLocaleString() : ''}</div>
-        `;
-      } catch (err) {
-        box.innerHTML = `<div class="text-red-400">${err.message || 'Error loading scan result.'}</div>`;
-      }
+          <div class="bg-slate-900 rounded-xl p-4">
+            <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🕵️ Content Analysis</h3>
+            <div><b>Phishing Score:</b> ${contentAnalysis.phishing_score ?? 'N/A'}</div>
+            <div><b>Detected Indicators:</b> <ul class="list-disc ml-6 text-sm">${(contentAnalysis.detected_indicators||[]).map(i=>`<li>${i}</li>`).join('')||'None'}</ul></div>
+            <div><b>Is Suspicious:</b> ${contentAnalysis.is_suspicious ? 'Yes' : 'No'}</div>
+            <div><b>Content Length:</b> ${contentAnalysis.content_length ?? 'N/A'}</div>
+            <div><b>Error:</b> ${contentAnalysis.error || 'None'}</div>
+          </div>
+          <div class="bg-slate-900 rounded-xl p-4">
+            <h3 class="text-cyan-300 font-bold mb-2 border-b border-slate-700 pb-1">🦠 VirusTotal Analysis</h3>
+            <div><b>Malicious:</b> ${vtAnalysis.malicious_count ?? 'N/A'}</div>
+            <div><b>Suspicious:</b> ${vtAnalysis.suspicious_count ?? 'N/A'}</div>
+            <div><b>Total Engines:</b> ${vtAnalysis.total_engines ?? 'N/A'}</div>
+            <div><b>Reputation:</b> ${vtAnalysis.reputation ?? 'N/A'}</div>
+            <div><b>Error:</b> ${vtAnalysis.error || 'None'}</div>
+          </div>
+        </div>
+        <div class="mt-6 text-center text-gray-400 text-xs">Scan time: ${r.scan_timestamp ? new Date(r.scan_timestamp).toLocaleString() : ''}</div>
+      `;
     }
     loadScanResult();
   </script>
