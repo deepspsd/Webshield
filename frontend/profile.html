@@ -21,7 +21,7 @@
   <section class="max-w-4xl mx-auto p-6">
     <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
       <div class="flex items-center space-x-6">
-        <img id="profilePic" src="https://i.imgur.com/1X4j2vV.png" class="w-20 h-20 rounded-full border-2 border-cyan-400 object-cover" alt="Profile Image">
+        <div id="profilePic" class="w-20 h-20 rounded-full border-2 border-cyan-400 bg-cyan-500 flex items-center justify-center text-2xl text-white">👤</div>
         <div>
           <h2 id="profileName" class="text-2xl font-bold">User Name</h2>
           <p class="text-sm text-gray-400">Registered User</p>
@@ -159,6 +159,14 @@
   </div>
 
 <script>
+// Global error handler for images
+window.addEventListener('error', function(e) {
+  if (e.target.tagName === 'IMG') {
+    console.log('Image failed to load:', e.target.src);
+    e.target.style.display = 'none';
+  }
+}, true);
+
 // Load user info from localStorage
 const name = localStorage.getItem('user_name') || 'User Name';
 const email = localStorage.getItem('user_email') || 'user@email.com';
@@ -170,14 +178,24 @@ fetch(`/api/get_user?email=${encodeURIComponent(email)}`)
   .then(res => res.json())
   .then(user => {
     if (user && user.profile_pic) {
-      document.getElementById('profilePic').src = `/profile_pics/${user.profile_pic}`;
+      // Try to load profile pic, fallback to emoji if fails
+      const img = new Image();
+      img.onload = function() {
+        document.getElementById('profilePic').innerHTML = '';
+        document.getElementById('profilePic').appendChild(img);
+      };
+      img.onerror = function() {
+        document.getElementById('profilePic').innerHTML = '👤';
+      };
+      img.src = `/profile_pics/${user.profile_pic}`;
+      img.className = 'w-20 h-20 rounded-full border-2 border-cyan-400 object-cover';
     } else {
-      document.getElementById('profilePic').src = 'https://i.imgur.com/1X4j2vV.png';
+      document.getElementById('profilePic').innerHTML = '👤';
       if (!user) console.log('User not found for email:', email);
     }
   })
   .catch(() => {
-    document.getElementById('profilePic').src = 'https://i.imgur.com/1X4j2vV.png';
+    document.getElementById('profilePic').innerHTML = '👤';
     console.log('Error fetching user info for profile photo.');
   });
 
@@ -204,7 +222,7 @@ photoForm.onsubmit = async function(e) {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      document.getElementById('profilePic').src = data.url + '?t=' + Date.now();
+      document.getElementById('profilePic').innerHTML = '👤';
       photoMsg.textContent = 'Photo updated!';
       photoMsg.className = 'text-green-400 ml-2 text-xs';
     } else {
