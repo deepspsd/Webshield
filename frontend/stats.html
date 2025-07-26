@@ -17,34 +17,43 @@
   </div>
   <script>
     const ctx = document.getElementById('statsChart').getContext('2d');
-    const statsChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Blacklisted URLs', 'Whitelisted URLs'],
-        datasets: [{
-          label: 'Count',
-          data: [{{ blacklist_count }}, {{ whitelist_count }}],
-          backgroundColor: ['#f87171', '#22c55e'],
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: '#fff' },
-            grid: { color: '#334155' }
+    let statsChart;
+    // Fetch stats from backend and update chart
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(stats => {
+        // You may need to adjust these keys based on your backend response
+        const blacklistCount = stats.malicious_detected || 0;
+        const whitelistCount = stats.clean_scans || 0;
+        statsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Blacklisted URLs', 'Whitelisted URLs'],
+            datasets: [{
+              label: 'Count',
+              data: [blacklistCount, whitelistCount],
+              backgroundColor: ['#f87171', '#22c55e'],
+            }]
           },
-          x: {
-            ticks: { color: '#fff' },
-            grid: { color: '#334155' }
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#fff' },
+                grid: { color: '#334155' }
+              },
+              x: {
+                ticks: { color: '#fff' },
+                grid: { color: '#334155' }
+              }
+            }
           }
-        }
-      }
-    });
+        });
+      });
   </script>
 </body>
 </html> 
