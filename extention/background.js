@@ -3,7 +3,6 @@ const API_BASE = "https://pggjs0c8-8000.inc1.devtunnels.ms";
 
 // Listen for messages from content/popup/options
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log('Background received message:', msg, sender);
   if (msg.type === 'CHECK_URL') {
     checkUrl(msg.url, sendResponse);
     return true;
@@ -26,16 +25,76 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'GET_TAB_ID') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      console.log('Queried tabs:', tabs);
       sendResponse(tabs[0]?.id);
     });
     return true;
   }
   if (msg.type === 'CLOSE_TAB' && msg.tabId) {
-    console.log('Closing tab:', msg.tabId);
     chrome.tabs.remove(msg.tabId);
   }
+  if (msg.type === 'CHECK_SSL_CERTIFICATE') {
+    checkSSLCertificate(msg.url, sendResponse);
+    return true;
+  }
+  if (msg.type === 'GET_SSL_DETAILS') {
+    getSSLDetails(msg.url, sendResponse);
+    return true;
+  }
 });
+
+// Enhanced SSL certificate validation
+async function checkSSLCertificate(url, cb) {
+  try {
+    const res = await fetch(`${API_BASE}/api/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    
+    if (data.results && data.results.detection_details && data.results.detection_details.ssl_analysis) {
+      const sslAnalysis = data.results.detection_details.ssl_analysis;
+      cb({
+        valid: sslAnalysis.valid || false,
+        issuer: sslAnalysis.issuer || null,
+        expires: sslAnalysis.expires || null,
+        error: sslAnalysis.error || null,
+        details: sslAnalysis.details || null
+      });
+    } else {
+      cb({ error: 'SSL analysis not available' });
+    }
+  } catch (e) {
+    cb({ error: 'Network error during SSL check' });
+  }
+}
+
+// Get detailed SSL certificate information
+async function getSSLDetails(url, cb) {
+  try {
+    const res = await fetch(`${API_BASE}/api/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    
+    if (data.results) {
+      cb({
+        ssl_valid: data.results.ssl_valid,
+        ssl_analysis: data.results.detection_details?.ssl_analysis || {},
+        threat_level: data.results.threat_level,
+        malicious_count: data.results.malicious_count,
+        suspicious_count: data.results.suspicious_count,
+        total_engines: data.results.total_engines
+      });
+    } else {
+      cb({ error: 'SSL details not available' });
+    }
+  } catch (e) {
+    cb({ error: 'Network error' });
+  }
+}
 
 // Real-time URL check
 async function checkUrl(url, cb) {
