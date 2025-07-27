@@ -231,6 +231,11 @@ class WebShieldDetector:
     
     async def analyze_ssl_certificate(self, url: str) -> Dict[str, Any]:
         """Analyze SSL certificate validity with improved error handling"""
+        import ssl
+        import socket
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        
         try:
             parsed = urllib.parse.urlparse(url)
             hostname = parsed.hostname
@@ -247,31 +252,113 @@ class WebShieldDetector:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
             
-            with socket.create_connection((hostname, port), timeout=2.0) as sock:
+            with socket.create_connection((hostname, port), timeout=5.0) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                    cert = ssock.getpeercert()
+                    # Try to get certificate in different ways
+                    cert = ssock.getpeercert(binary_form=False)
+                    if not cert:
+                        # Fallback: try without binary_form parameter
+                        cert = ssock.getpeercert()
+                    
+                    # Debug logging
+                    import logging
+                    logger = logging.getLogger("ssl")
+                    logger.info(f"SSL Certificate for {hostname}: {cert}")
+                    logger.info(f"Certificate type: {type(cert)}")
+                    if cert:
+                        logger.info(f"Certificate keys: {list(cert.keys())}")
+                    
+                    # Check if certificate is empty or None
+                    if not cert:
+                        # Try to get binary certificate and parse it
+                        try:
+                            cert_binary = ssock.getpeercert(binary_form=True)
+                            if cert_binary:
+                                # Parse the binary certificate
+                                cert_obj = x509.load_der_x509_certificate(cert_binary, default_backend())
+                                
+                                # Extract issuer
+                                issuer_name = cert_obj.issuer.get_attributes_for_oid(x509.NameOID.ORGANIZATION_NAME)
+                                issuer = issuer_name[0].value if issuer_name else "Unknown"
+                                
+                                # Extract expiry (use UTC to avoid deprecation warning)
+                                expiry = cert_obj.not_valid_after_utc.strftime("%Y-%m-%d %H:%M:%S")
+                                
+                                return {
+                                    'valid': True,
+                                    'issuer': issuer,
+                                    'expires': expiry,
+                                    'serial_number': str(cert_obj.serial_number),
+                                    'version': str(cert_obj.version.value)
+                                }
+                        except Exception as e:
+                            logger.error(f"Failed to parse binary certificate: {e}")
+                        
+                        return {
+                            'valid': False,
+                            'error': 'No certificate data received',
+                            'details': 'SSL handshake completed but no certificate information available'
+                        }
                     
                     # Extract issuer information safely
                     issuer_info = {}
-                    if 'issuer' in cert:
+                    if 'issuer' in cert and cert['issuer']:
                         try:
-                            issuer_info = dict(x[0] for x in cert['issuer'])
+                            # The issuer is a tuple of tuples, convert to dict properly
+                            issuer_dict = {}
+                            for item in cert['issuer']:
+                                if len(item) >= 2:
+                                    issuer_dict[item[0]] = item[1]
+                            issuer_info = issuer_dict
                         except (KeyError, IndexError, TypeError):
                             issuer_info = {'commonName': 'Unknown'}
                     
                     # Extract subject information safely
                     subject_info = {}
-                    if 'subject' in cert:
+                    if 'subject' in cert and cert['subject']:
                         try:
-                            subject_info = dict(x[0] for x in cert['subject'])
+                            # The subject is a tuple of tuples, convert to dict properly
+                            subject_dict = {}
+                            for item in cert['subject']:
+                                if len(item) >= 2:
+                                    subject_dict[item[0]] = item[1]
+                            subject_info = subject_dict
                         except (KeyError, IndexError, TypeError):
                             subject_info = {'commonName': hostname}
                     
+                    # Format issuer name for display (string format for frontend)
+                    issuer_name = 'Unknown'
+                    if issuer_info:
+                        if 'organizationName' in issuer_info:
+                            issuer_name = issuer_info['organizationName']
+                        elif 'commonName' in issuer_info:
+                            issuer_name = issuer_info['commonName']
+                        elif 'organizationalUnitName' in issuer_info:
+                            issuer_name = issuer_info['organizationalUnitName']
+                        elif 'countryName' in issuer_info:
+                            issuer_name = f"CA ({issuer_info['countryName']})"
+                    
+                    # Format expiry date
+                    expiry_date = 'Unknown'
+                    if 'notAfter' in cert and cert['notAfter']:
+                        try:
+                            # Parse the date string and format it nicely
+                            from datetime import datetime
+                            expiry_str = cert['notAfter']
+                            # Handle different date formats
+                            if 'GMT' in expiry_str:
+                                expiry_date = expiry_str.replace('GMT', '').strip()
+                            else:
+                                expiry_date = expiry_str
+                        except:
+                            expiry_date = cert['notAfter']
+                    
                     return {
                         'valid': True,
-                        'issuer': issuer_info,
+                        'issuer': issuer_name,  # String format for frontend
+                        'issuer_details': issuer_info,  # Keep full details
                         'subject': subject_info,
-                        'expires': cert.get('notAfter', 'Unknown'),
+                        'expires': expiry_date,
                         'serial_number': cert.get('serialNumber', 'Unknown'),
                         'version': cert.get('version', 'Unknown')
                     }
@@ -303,56 +390,77 @@ class WebShieldDetector:
     async def analyze_content(self, url: str, max_bytes=200*1024) -> Dict[str, Any]:
         """Analyze webpage content for phishing indicators"""
         try:
-            async with self.session.get(url, timeout=0.3) as response:
-                if response.status != 200:
-                    return {'error': f'HTTP {response.status}', 'phishing_score': 0}
-                content = await response.content.read(max_bytes)
-                content = content.decode(errors='ignore')
-                
-                phishing_score = 0
-                detected_indicators = []
-                
-                # Check for phishing keywords
-                content_lower = content.lower()
-                for keyword in PHISHING_KEYWORDS:
-                    if keyword in content_lower:
-                        phishing_score += 5
-                        detected_indicators.append(f"Phishing keyword: {keyword}")
-                
-                # Check for suspicious forms
-                if re.search(r'<form[^>]*action\s*=\s*["\']?(?:https?://)?[^/"\']*["\']?', content):
-                    if 'password' in content_lower or 'login' in content_lower:
-                        phishing_score += 15
-                        detected_indicators.append("Suspicious login form detected")
-                
-                # Check for fake security badges
-                if re.search(r'(norton|mcafee|verisign|ssl|secure)', content_lower):
-                    phishing_score += 10
-                    detected_indicators.append("Fake security badges detected")
-                
-                # Check for urgency indicators
-                urgency_patterns = [
-                    r'act\s+now', r'urgent', r'immediate', r'expires?\s+(today|soon)',
-                    r'limited\s+time', r'act\s+fast', r'don\'t\s+miss'
-                ]
-                
-                for pattern in urgency_patterns:
-                    if re.search(pattern, content_lower):
-                        phishing_score += 8
-                        detected_indicators.append(f"Urgency indicator: {pattern}")
-                
-                return {
-                    'phishing_score': phishing_score,
-                    'detected_indicators': detected_indicators,
-                    'is_suspicious': phishing_score > 20,
-                    'content_length': len(content)
-                }
-        except Exception as e:
+            # Create a separate session for content analysis that bypasses SSL verification
+            # This allows us to analyze content even from sites with expired/invalid certificates
+            connector = aiohttp.TCPConnector(ssl=False)
+            async with aiohttp.ClientSession(connector=connector) as content_session:
+                async with content_session.get(url, timeout=5.0) as response:
+                    if response.status != 200:
+                        return {
+                            'error': f'HTTP {response.status}', 
+                            'phishing_score': 0,
+                            'detected_indicators': [],
+                            'is_suspicious': False,
+                            'content_length': 0
+                        }
+                    
+                    content = await response.content.read(max_bytes)
+                    content = content.decode(errors='ignore')
+                    
+                    phishing_score = 0
+                    detected_indicators = []
+                    
+                    # Check for phishing keywords
+                    content_lower = content.lower()
+                    for keyword in PHISHING_KEYWORDS:
+                        if keyword in content_lower:
+                            phishing_score += 5
+                            detected_indicators.append(f"Phishing keyword: {keyword}")
+                    
+                    # Check for suspicious forms
+                    if re.search(r'<form[^>]*action\s*=\s*["\']?(?:https?://)?[^/"\']*["\']?', content):
+                        if 'password' in content_lower or 'login' in content_lower:
+                            phishing_score += 15
+                            detected_indicators.append("Suspicious login form detected")
+                    
+                    # Check for fake security badges
+                    if re.search(r'(norton|mcafee|verisign|ssl|secure)', content_lower):
+                        phishing_score += 10
+                        detected_indicators.append("Fake security badges detected")
+                    
+                    # Check for urgency indicators
+                    urgency_patterns = [
+                        r'act\s+now', r'urgent', r'immediate', r'expires?\s+(today|soon)',
+                        r'limited\s+time', r'act\s+fast', r'don\'t\s+miss'
+                    ]
+                    
+                    for pattern in urgency_patterns:
+                        if re.search(pattern, content_lower):
+                            phishing_score += 8
+                            detected_indicators.append(f"Urgency indicator: {pattern}")
+                    
+                    return {
+                        'phishing_score': phishing_score,
+                        'detected_indicators': detected_indicators,
+                        'is_suspicious': phishing_score > 20,
+                        'content_length': len(content),
+                        'error': None
+                    }
+        except asyncio.TimeoutError:
             return {
-                'error': str(e),
+                'error': 'Content analysis timed out',
                 'phishing_score': 0,
                 'detected_indicators': [],
-                'is_suspicious': False
+                'is_suspicious': False,
+                'content_length': 0
+            }
+        except Exception as e:
+            return {
+                'error': f'Content analysis failed: {str(e)}',
+                'phishing_score': 0,
+                'detected_indicators': [],
+                'is_suspicious': False,
+                'content_length': 0
             }
     
     async def check_virustotal(self, url: str) -> Dict[str, Any]:
@@ -613,13 +721,53 @@ async def _do_scan(url: str, scan_id: str):
                     logger.warning(f"{label} failed or timed out: {e}")
                     return {'error': str(e)}
             url_analysis_task = asyncio.to_thread(detector_instance.analyze_url_patterns, url)
-            ssl_task = with_timeout(detector_instance.analyze_ssl_certificate(url), 1.5, 'SSL')
-            content_task = with_timeout(detector_instance.analyze_content(url, max_bytes=15*1024), 0.3, 'Content')
+            ssl_task = with_timeout(detector_instance.analyze_ssl_certificate(url), 5.0, 'SSL')
+            content_task = with_timeout(detector_instance.analyze_content(url, max_bytes=15*1024), 3.0, 'Content')
             vt_task = with_timeout(detector_instance.check_virustotal(url), 3.0, 'VirusTotal')
             url_analysis, ssl_analysis, content_analysis, vt_analysis = await asyncio.gather(
                 url_analysis_task, ssl_task, content_task, vt_task, return_exceptions=True
             )
             logger.info(f"Scan results for {url}: url_analysis={url_analysis}, ssl_analysis={ssl_analysis}, content_analysis={content_analysis}, vt_analysis={vt_analysis}")
+            
+            # Debug content analysis specifically
+            if isinstance(content_analysis, Exception):
+                logger.error(f"Content analysis failed with exception: {content_analysis}")
+                content_analysis = {
+                    'error': f'Content analysis failed: {str(content_analysis)}',
+                    'phishing_score': 0,
+                    'detected_indicators': [],
+                    'is_suspicious': False,
+                    'content_length': 0
+                }
+            elif not isinstance(content_analysis, dict):
+                logger.error(f"Content analysis returned invalid type: {type(content_analysis)}")
+                content_analysis = {
+                    'error': 'Content analysis returned invalid data',
+                    'phishing_score': 0,
+                    'detected_indicators': [],
+                    'is_suspicious': False,
+                    'content_length': 0
+                }
+            
+            # Debug URL analysis specifically
+            if isinstance(url_analysis, Exception):
+                logger.error(f"URL analysis failed with exception: {url_analysis}")
+                url_analysis = {
+                    'error': f'URL analysis failed: {str(url_analysis)}',
+                    'suspicious_score': 0,
+                    'detected_issues': [],
+                    'domain': 'N/A',
+                    'is_suspicious': False
+                }
+            elif not isinstance(url_analysis, dict):
+                logger.error(f"URL analysis returned invalid type: {type(url_analysis)}")
+                url_analysis = {
+                    'error': 'URL analysis returned invalid data',
+                    'suspicious_score': 0,
+                    'detected_issues': [],
+                    'domain': 'N/A',
+                    'is_suspicious': False
+                }
             
             # Handle VirusTotal analysis with fallback
             malicious_count = 0
@@ -639,9 +787,9 @@ async def _do_scan(url: str, scan_id: str):
                 total_engines = 0
             
             threat_score = 0
-            if isinstance(url_analysis, dict):
+            if isinstance(url_analysis, dict) and 'error' not in url_analysis:
                 threat_score += url_analysis.get('suspicious_score', 0)
-            if isinstance(content_analysis, dict):
+            if isinstance(content_analysis, dict) and 'error' not in content_analysis:
                 threat_score += content_analysis.get('phishing_score', 0)
             if isinstance(ssl_analysis, dict) and not ssl_analysis.get('valid', False):
                 threat_score += 25
@@ -670,14 +818,37 @@ async def _do_scan(url: str, scan_id: str):
             }
             
             # Ensure at least one field is always present in detection_details
-            if not detection_details['url_analysis']:
-                detection_details['url_analysis'] = {'info': 'No suspicious patterns found'}
-            if not detection_details['ssl_analysis']:
-                detection_details['ssl_analysis'] = {'info': 'No SSL issues found'}
-            if not detection_details['content_analysis']:
-                detection_details['content_analysis'] = {'info': 'No phishing indicators found'}
-            if not detection_details['virustotal_analysis']:
-                detection_details['virustotal_analysis'] = {'info': 'VirusTotal analysis unavailable - using other security checks'}
+            if not detection_details['url_analysis'] or not isinstance(detection_details['url_analysis'], dict):
+                detection_details['url_analysis'] = {
+                    'suspicious_score': 0,
+                    'detected_issues': [],
+                    'domain': 'N/A',
+                    'is_suspicious': False,
+                    'error': 'URL analysis unavailable'
+                }
+            if not detection_details['ssl_analysis'] or not isinstance(detection_details['ssl_analysis'], dict):
+                detection_details['ssl_analysis'] = {
+                    'valid': False,
+                    'issuer': 'N/A',
+                    'expires': 'N/A',
+                    'error': 'SSL analysis unavailable'
+                }
+            if not detection_details['content_analysis'] or not isinstance(detection_details['content_analysis'], dict):
+                detection_details['content_analysis'] = {
+                    'phishing_score': 0,
+                    'detected_indicators': [],
+                    'is_suspicious': False,
+                    'content_length': 0,
+                    'error': 'Content analysis unavailable'
+                }
+            if not detection_details['virustotal_analysis'] or not isinstance(detection_details['virustotal_analysis'], dict):
+                detection_details['virustotal_analysis'] = {
+                    'malicious_count': 0,
+                    'suspicious_count': 0,
+                    'total_engines': 0,
+                    'reputation': 'N/A',
+                    'error': 'VirusTotal analysis unavailable - using other security checks'
+                }
             result = ScanResult(
                 url=url,
                 is_malicious=is_malicious,
@@ -1021,7 +1192,7 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         app, 
-        host="0.0.0.0", 
+        host="127.0.0.1", 
         port=8000,
         workers=1,
         access_log=False,
