@@ -1,273 +1,855 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>User Profile - WebShield</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebShield - Profile</title>
+    <style>
+        :root {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --popover: 222.2 84% 4.9%;
+            --popover-foreground: 210 40% 98%;
+            --primary: 262 83% 58%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 262 83% 58%;
+            --radius: 0.75rem;
+            --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(262 100% 65%));
+            --gradient-card: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(217.2 32.6% 20%) 100%);
+            --shadow-glow: 0 0 30px hsl(var(--primary) / 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            border-bottom: 1px solid hsl(var(--border) / 0.5);
+            background: hsl(var(--card) / 0.5);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 4rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav a {
+            color: hsl(var(--foreground));
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.3s;
+        }
+
+        .nav a:hover {
+            color: hsl(var(--primary));
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: hsl(var(--foreground));
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost:hover {
+            background: hsl(var(--accent));
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: hsl(var(--primary-foreground));
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 40px hsl(var(--primary) / 0.4);
+        }
+
+        .btn-secondary {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border: 1px solid hsl(var(--border));
+        }
+
+        .btn-secondary:hover {
+            background: hsl(var(--accent));
+        }
+
+        .btn-destructive {
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+        }
+
+        .btn-destructive:hover {
+            background: hsl(0 62.8% 25%);
+        }
+
+        /* Main content */
+        .main {
+            padding: 2rem 0;
+        }
+
+        .profile-header {
+            margin-bottom: 2rem;
+        }
+
+        .profile-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-subtitle {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .profile-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-card {
+            background: var(--gradient-card);
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+
+        .user-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            color: hsl(var(--foreground));
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .menu-item:hover {
+            background: hsl(var(--accent));
+        }
+
+        .menu-item.active {
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+        }
+
+        .menu-item.destructive {
+            color: hsl(var(--destructive));
+        }
+
+        .menu-item.destructive:hover {
+            background: hsl(var(--destructive) / 0.1);
+        }
+
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section {
+            background: var(--gradient-card);
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: hsl(var(--foreground));
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: hsl(var(--foreground));
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            color: hsl(var(--foreground));
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: hsl(var(--primary));
+            box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+        }
+
+        .form-input::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-weight: 500;
+        }
+
+        .setting-description {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        .toggle {
+            width: 48px;
+            height: 24px;
+            background: hsl(var(--muted));
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: hsl(var(--primary));
+        }
+
+        .toggle::after {
+            content: '';
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Enhanced Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.75rem;
+            }
+            
+            .nav {
+                display: none;
+            }
+            
+            .profile-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .profile-sidebar {
+                order: 2;
+            }
+            
+            .profile-content {
+                order: 1;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .profile-header {
+                text-align: center;
+                padding: 1rem 0;
+            }
+            
+            .profile-title {
+                font-size: 1.75rem;
+            }
+            
+            .profile-subtitle {
+                font-size: 1rem;
+            }
+            
+            .form-input {
+                height: 3rem;
+                font-size: 1rem;
+            }
+            
+            .btn {
+                height: 3rem;
+                font-size: 1rem;
+            }
+            
+            .profile-card {
+                padding: 1.25rem;
+            }
+            
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+            
+            .profile-title {
+                font-size: 1.5rem;
+            }
+            
+            .form-input {
+                height: 2.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn {
+                height: 2.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .profile-card {
+                padding: 1rem;
+            }
+            
+            .user-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen">
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🛡️</div>
+                    <span class="logo-text">WebShield</span>
+                </a>
+                
+                <nav class="nav">
+                    <a href="/index-html.html#features">Features</a>
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="/about.html">About</a>
+                </nav>
 
-  <!-- Header -->
-  <header class="bg-slate-800 p-4 flex justify-between items-center shadow">
-    <a href="dashboard.html" class="flex items-center gap-2">
-      <span class="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-xl">🛡️</span>
-      <span class="text-2xl font-bold text-cyan-400">WebShield</span>
-    </a>
-    <a href="dashboard.html" class="text-sm text-cyan-300 hover:underline">← Back to Dashboard</a>
-  </header>
+                <div class="header-buttons">
+                    <a href="/login.html" class="btn btn-ghost">Login</a>
+                    <a href="/register.html" class="btn btn-primary">Register</a>
+                </div>
+            </div>
+        </div>
+    </header>
 
-  <!-- Profile Section -->
-  <section class="max-w-4xl mx-auto p-6">
-    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
-      <div class="flex items-center space-x-6">
-        <div id="profilePic" class="w-20 h-20 rounded-full border-2 border-cyan-400 bg-cyan-500 flex items-center justify-center text-2xl text-white">👤</div>
-        <div>
-          <h2 id="profileName" class="text-2xl font-bold">User Name</h2>
-          <p class="text-sm text-gray-400">Registered User</p>
-          <form id="photoUploadForm" enctype="multipart/form-data" class="mt-2">
-            <input type="file" id="photoInput" name="file" accept="image/*" class="block text-sm text-gray-300 mb-2" style="max-width:200px;" />
-            <button type="submit" class="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-1 rounded text-sm">Update Photo</button>
-            <span id="photoUploadMsg" class="ml-2 text-xs"></span>
-          </form>
-        </div>
-      </div>
+    <main class="main">
+        <div class="container">
+            <div class="profile-header">
+                <h1 class="profile-title">Profile Settings</h1>
+                <p class="profile-subtitle">Manage your account and security preferences</p>
+            </div>
 
-      <div class="mt-6 border-t border-gray-700 pt-4 grid gap-4 md:grid-cols-2">
-        <div>
-          <h3 class="font-semibold text-cyan-400 mb-1">Email</h3>
-          <p id="profileEmail" class="text-gray-300">user@email.com</p>
+            <div class="profile-grid">
+                <div class="profile-sidebar">
+                    <div class="profile-card">
+                        <div class="user-info">
+                            <div class="user-avatar">JD</div>
+                            <div class="user-name">John Doe</div>
+                            <div class="user-email">john.doe@example.com</div>
+                        </div>
+                        
+                        <button class="btn btn-secondary" style="width: 100%;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                            Upload Photo
+                        </button>
+                    </div>
+
+                    <div class="profile-card">
+                        <button class="menu-item active">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Personal Info
+                        </button>
+                        
+                        <button class="menu-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                <path d="m7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            Security
+                        </button>
+                        
+                        <button class="menu-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m6 9 6 6 6-6"/>
+                            </svg>
+                            Notifications
+                        </button>
+                        
+                        <button class="menu-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6"/>
+                            </svg>
+                            Privacy
+                        </button>
+                        
+                        <button class="menu-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                            </svg>
+                            API Keys
+                        </button>
+                        
+                        <button class="menu-item destructive">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16,17 21,12 16,7"/>
+                                <line x1="21" x2="9" y1="12" y2="12"/>
+                            </svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-content">
+                    <div class="section">
+                        <h2 class="section-title">Personal Information</h2>
+                        <form>
+                            <div class="form-group">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" id="name" class="form-input" value="John Doe" placeholder="Full name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" id="email" class="form-input" value="john.doe@example.com" placeholder="Email address">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" id="phone" class="form-input" placeholder="Phone number">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <div class="section">
+                        <h2 class="section-title">Security Settings</h2>
+                        
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Two-Factor Authentication</div>
+                                <div class="setting-description">Add an extra layer of security to your account</div>
+                            </div>
+                            <div class="toggle active"></div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Email Notifications</div>
+                                <div class="setting-description">Receive security alerts via email</div>
+                            </div>
+                            <div class="toggle active"></div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Browser Extension Sync</div>
+                                <div class="setting-description">Sync settings across devices</div>
+                            </div>
+                            <div class="toggle"></div>
+                        </div>
+                        
+                        <button class="btn btn-secondary">Change Password</button>
+                    </div>
+
+                    <div class="section">
+                        <h2 class="section-title">Subscription</h2>
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Current Plan</div>
+                                <div class="setting-description">WebShield Pro - $9.99/month</div>
+                            </div>
+                            <button class="btn btn-primary">Upgrade</button>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Billing</div>
+                                <div class="setting-description">Next billing date: Jan 15, 2025</div>
+                            </div>
+                            <button class="btn btn-secondary">Manage</button>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2 class="section-title">Danger Zone</h2>
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Delete Account</div>
+                                <div class="setting-description">Permanently delete your account and all data</div>
+                            </div>
+                            <button class="btn btn-destructive">Delete Account</button>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div>
+                                <div class="setting-label">Logout</div>
+                                <div class="setting-description">Sign out of your account</div>
+                            </div>
+                            <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-cyan-400 mb-1">Joined</h3>
-          <p class="text-gray-300">July 2025</p>
+    </main>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:hsl(var(--card)); padding:2rem; border-radius:var(--radius); max-width:400px; width:100%; margin:auto; box-shadow:0 10px 30px -10px hsl(var(--primary) / 0.3);">
+            <h2 class="section-title" style="margin-bottom:1rem;">Change Password</h2>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword" class="form-label">Current Password</label>
+                    <input type="password" id="currentPassword" class="form-input" required placeholder="Current password">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword" class="form-label">New Password</label>
+                    <input type="password" id="newPassword" class="form-input" required placeholder="New password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" class="form-input" required placeholder="Confirm new password">
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                    <button type="button" class="btn btn-secondary" id="cancelChangePassword">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
         </div>
-        <div>
-          <h3 class="font-semibold text-cyan-400 mb-1">Last Login</h3>
-          <p class="text-gray-300">16 July 2025, 7:00 PM</p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-cyan-400 mb-1">Account Type</h3>
-          <p class="text-gray-300">Standard</p>
-        </div>
-      </div>
     </div>
 
-    <!-- Settings & History -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-      <!-- Account Settings -->
-      <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
-        <h3 class="text-xl font-semibold text-cyan-400 mb-4">⚙️ Account Settings</h3>
-        <ul class="space-y-3">
-          <li>
-            <a href="#" onclick="openModal('editProfileModal')" class="hover:underline text-white">Edit Profile Info</a>
-          </li>
-          <li>
-            <a href="#" onclick="openModal('changePasswordModal')" class="hover:underline text-white">Change Password</a>
-          </li>
-          <li>
-            <a href="#" onclick="openModal('notificationModal')" class="hover:underline text-white">Notification Preferences</a>
-          </li>
-        </ul>
-      </div>
+    <script>
+        // Toggle functionality
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+            });
+        });
 
-      <!-- History -->
-      <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
-        <h3 class="text-xl font-semibold text-cyan-400 mb-4">�� Recent Scans</h3>
-        <div class="overflow-x-auto">
-          <table class="table-auto w-full text-left border-collapse">
-            <thead class="text-cyan-200 border-b border-cyan-800">
-              <tr>
-                <th class="pb-2">Date</th>
-                <th class="pb-2">Website</th>
-                <th class="pb-2">Result</th>
-                <th class="pb-2">Details</th>
-              </tr>
-            </thead>
-            <tbody id="profileScanHistoryBody" class="text-blue-100">
-              <!-- JS will populate rows here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+        // Menu item functionality
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
 
-    <!-- Logout Button -->
-    <div class="mt-6 text-right">
-      <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-semibold">Logout</button>
-      <a href="dashboard.html" class="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-xl font-semibold ml-2">Back to Dashboard</a>
-    </div>
-  </section>
+        // Set user info from localStorage (for profile card and form)
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = localStorage.getItem('userName') || '';
+            const userEmail = localStorage.getItem('userEmail') || '';
+            const userPhone = localStorage.getItem('userPhone_number') || '';
+            const nameElem = document.querySelector('.user-name');
+            const emailElem = document.querySelector('.user-email');
+            if (nameElem) nameElem.textContent = userName;
+            if (emailElem) emailElem.textContent = userEmail;
 
-  <!-- ============================
-       MODALS FOR ACCOUNT SETTINGS
-       ============================ -->
+            // Set form fields
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const phoneInput = document.getElementById('phone');
+            if (nameInput) nameInput.value = userName;
+            if (emailInput) emailInput.value = userEmail;
+            if (phoneInput) phoneInput.value = userPhone;
+        });
 
-  <!-- Edit Profile Modal -->
-  <div id="editProfileModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
-      <button onclick="closeModal('editProfileModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
-      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Edit Profile Info</h2>
-      <form action="/update_profile" method="POST" onsubmit="closeModal('editProfileModal')">
-        <label class="block mb-2 text-sm text-gray-300">Full Name</label>
-        <input type="text" name="name" value="{{ user.name }}" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
-        <label class="block mb-2 text-sm text-gray-300">Email</label>
-        <input type="email" name="email" value="{{ user.email }}" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
-        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
-          Save Changes
-        </button>
-      </form>
-    </div>
-  </div>
+        // Handle Personal Information form submit
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.section form');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const oldEmail = localStorage.getItem('userEmail') || '';
+                    const newName = document.getElementById('name').value;
+                    const newEmail = document.getElementById('email').value;
+                    const newPhone = document.getElementById('phone').value;
+                    try {
+                        const response = await fetch(`${window.API_BASE_URL}/update_profile`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                old_email: oldEmail,
+                                new_name: newName,
+                                new_email: newEmail,
+                                phone_number: newPhone
+                            })
+                        });
+                        if (response.ok) {
+                            // Update localStorage and UI
+                            localStorage.setItem('userName', newName);
+                            localStorage.setItem('userEmail', newEmail);
+                            localStorage.setItem('userPhone_number', newPhone);
+                            const nameElem = document.querySelector('.user-name');
+                            const emailElem = document.querySelector('.user-email');
+                            if (nameElem) nameElem.textContent = newName;
+                            if (emailElem) emailElem.textContent = newEmail;
+                            alert('Profile updated successfully!');
+                        } else {
+                            const error = await response.json();
+                            alert(error.detail || 'Failed to update profile.');
+                        }
+                    } catch (err) {
+                        alert('Failed to update profile.');
+                    }
+                });
+            }
+        });
 
-  <!-- Change Password Modal -->
-  <div id="changePasswordModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
-      <button onclick="closeModal('changePasswordModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
-      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Change Password</h2>
-      <form action="/change_password" method="POST" onsubmit="closeModal('changePasswordModal')">
-        <label class="block mb-2 text-sm text-gray-300">Current Password</label>
-        <input type="password" name="old_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
-        <label class="block mb-2 text-sm text-gray-300">New Password</label>
-        <input type="password" name="new_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
-        <label class="block mb-2 text-sm text-gray-300">Confirm New Password</label>
-        <input type="password" name="confirm_password" class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600" required>
-        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
-          Update Password
-        </button>
-      </form>
-    </div>
-  </div>
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            // Clear localStorage
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            
+            // Redirect to index.html
+            window.location.href = '/';
+        });
 
-  <!-- Notification Preferences Modal -->
-  <div id="notificationModal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md relative">
-      <button onclick="closeModal('notificationModal')" class="absolute top-2 right-4 text-white text-xl">&times;</button>
-      <h2 class="text-xl font-semibold text-cyan-400 mb-4">Notification Preferences</h2>
-      <form onsubmit="submitNotificationPreferences(event)">
-        <label class="block mb-2 text-sm text-gray-300">Email Notifications:</label>
-        <select class="w-full mb-4 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600">
-          <option>Receive all notifications</option>
-          <option>Only important alerts</option>
-          <option>Do not send notifications</option>
-        </select>
-        <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 py-2 rounded-lg font-semibold text-white transition">
-          Save Preferences
-        </button>
-      </form>
-    </div>
-  </div>
+        // Show Change Password Modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const changePasswordBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Change Password');
+            const modal = document.getElementById('changePasswordModal');
+            if (changePasswordBtn && modal) {
+                changePasswordBtn.addEventListener('click', function() {
+                    modal.style.display = 'flex';
+                });
+            }
+            // Cancel button
+            const cancelBtn = document.getElementById('cancelChangePassword');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    document.getElementById('changePasswordForm').reset();
+                });
+            }
+            // Close modal on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    document.getElementById('changePasswordForm').reset();
+                }
+            });
+        });
 
-<script>
-// Global error handler for images
-window.addEventListener('error', function(e) {
-  if (e.target.tagName === 'IMG') {
-    console.log('Image failed to load:', e.target.src);
-    e.target.style.display = 'none';
-  }
-}, true);
-
-// Load user info from localStorage
-const name = localStorage.getItem('user_name') || 'User Name';
-const email = localStorage.getItem('user_email') || 'user@email.com';
-document.getElementById('profileName').textContent = name;
-document.getElementById('profileEmail').textContent = email;
-
-// Fetch and show profile photo if available
-fetch(`/api/get_user?email=${encodeURIComponent(email)}`)
-  .then(res => res.json())
-  .then(user => {
-    if (user && user.profile_pic) {
-      // Try to load profile pic, fallback to emoji if fails
-      const img = new Image();
-      img.onload = function() {
-        document.getElementById('profilePic').innerHTML = '';
-        document.getElementById('profilePic').appendChild(img);
-      };
-      img.onerror = function() {
-        document.getElementById('profilePic').innerHTML = '👤';
-      };
-      img.src = `/profile_pics/${user.profile_pic}`;
-      img.className = 'w-20 h-20 rounded-full border-2 border-cyan-400 object-cover';
-    } else {
-      document.getElementById('profilePic').innerHTML = '👤';
-      if (!user) console.log('User not found for email:', email);
-    }
-  })
-  .catch(() => {
-    document.getElementById('profilePic').innerHTML = '👤';
-    console.log('Error fetching user info for profile photo.');
-  });
-
-// Handle profile photo upload
-const photoForm = document.getElementById('photoUploadForm');
-const photoInput = document.getElementById('photoInput');
-const photoMsg = document.getElementById('photoUploadMsg');
-photoForm.onsubmit = async function(e) {
-  e.preventDefault();
-  if (!photoInput.files.length) {
-    photoMsg.textContent = 'Please select a photo.';
-    photoMsg.className = 'text-red-400 ml-2 text-xs';
-    return;
-  }
-  const formData = new FormData();
-  formData.append('file', photoInput.files[0]);
-  formData.append('email', email);
-  photoMsg.textContent = 'Uploading...';
-  photoMsg.className = 'text-gray-300 ml-2 text-xs';
-  try {
-    const res = await fetch('/api/upload_profile_photo', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      document.getElementById('profilePic').innerHTML = '👤';
-      photoMsg.textContent = 'Photo updated!';
-      photoMsg.className = 'text-green-400 ml-2 text-xs';
-    } else {
-      photoMsg.textContent = data.detail || 'Upload failed.';
-      photoMsg.className = 'text-red-400 ml-2 text-xs';
-    }
-  } catch (err) {
-    photoMsg.textContent = 'Network error.';
-    photoMsg.className = 'text-red-400 ml-2 text-xs';
-  }
-};
-// Logout functionality
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-  logoutBtn.onclick = function() {
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_email');
-    window.location.href = 'login.html';
-  };
-}
-
-// Fetch and render recent scans in profile
-fetch('/api/history?limit=5')
-  .then(res => res.json())
-  .then(data => {
-    const tbody = document.getElementById('profileScanHistoryBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    if (data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-2">No scan history found.</td></tr>';
-      return;
-    }
-    data.forEach(scan => {
-      tbody.innerHTML += `
-        <tr class="border-b border-cyan-800">
-          <td class="py-2">${scan.created_at ? new Date(scan.created_at).toLocaleString() : ''}</td>
-          <td>${scan.url || ''}</td>
-          <td class="${scan.is_malicious ? 'text-red-300' : 'text-green-300'}">${scan.threat_level || ''}</td>
-          <td>${scan.status || ''}</td>
-        </tr>
-      `;
-    });
-  })
-  .catch(() => {
-    const tbody = document.getElementById('profileScanHistoryBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-2">Error loading history.</td></tr>';
-  });
-</script>
+        // Handle Change Password Form Submit
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('changePasswordForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const email = localStorage.getItem('userEmail') || '';
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+                    if (newPassword !== confirmNewPassword) {
+                        alert('New passwords do not match!');
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`${window.API_BASE_URL}/change_password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: email,
+                                current_password: currentPassword,
+                                new_password: newPassword
+                            })
+                        });
+                        if (response.ok) {
+                            alert('Password changed successfully!');
+                            document.getElementById('changePasswordModal').style.display = 'none';
+                            form.reset();
+                        } else {
+                            const error = await response.json();
+                            alert(error.detail || 'Failed to change password.');
+                        }
+                    } catch (err) {
+                        alert('Failed to change password.');
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <!-- Include configuration for API base URL -->
+    <script src="config.js"></script>
+</body>
+</html>
