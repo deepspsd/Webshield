@@ -2,117 +2,1082 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Scan Results</title>
+    <title>Scan Report - WebShield</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Enhanced Color Palette - Modern Cyber Security Theme */
+            --background: 220 25% 3%;
+            --foreground: 220 25% 98%;
+            --card: 220 25% 5%;
+            --card-foreground: 220 25% 98%;
+            
+            /* Primary - Electric Blue */
+            --primary: 210 100% 60%;
+            --primary-foreground: 220 25% 98%;
+            
+            /* Secondary - Deep Purple */
+            --secondary: 250 25% 15%;
+            --secondary-foreground: 220 25% 98%;
+            
+            /* Muted - Subtle Gray */
+            --muted: 220 25% 12%;
+            --muted-foreground: 220 25% 70%;
+            
+            /* Accent - Cyber Green */
+            --accent: 160 84% 45%;
+            --accent-foreground: 220 25% 98%;
+            
+            /* Success - Emerald */
+            --success: 160 84% 45%;
+            
+            /* Warning - Amber */
+            --warning: 45 93% 47%;
+            
+            /* Destructive - Electric Red */
+            --destructive: 0 84% 60%;
+            --destructive-foreground: 220 25% 98%;
+            
+            /* Border - Subtle */
+            --border: 220 25% 15%;
+            --ring: 210 100% 60%;
+            --radius: 0.75rem;
+            
+            /* Additional Colors for Enhanced UI */
+            --gradient-primary: linear-gradient(135deg, hsl(210 100% 60%), hsl(250 100% 60%));
+            --gradient-accent: linear-gradient(135deg, hsl(160 84% 45%), hsl(210 100% 60%));
+            --gradient-success: linear-gradient(135deg, hsl(160 84% 45%), hsl(142 76% 36%));
+            --gradient-warning: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 92% 50%));
+            --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 72% 51%));
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: 0 20px 40px -10px hsl(var(--primary) / 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-safe {
+            background: hsl(var(--success) / 0.1);
+            color: hsl(var(--success));
+            border: 1px solid hsl(var(--success) / 0.3);
+        }
+
+        .status-warning {
+            background: hsl(var(--warning) / 0.1);
+            color: hsl(var(--warning));
+            border: 1px solid hsl(var(--warning) / 0.3);
+        }
+
+        .status-danger {
+            background: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border: 1px solid hsl(var(--destructive) / 0.3);
+        }
+
+        .url-display {
+            background: hsl(var(--muted));
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            border: 1px solid hsl(var(--border));
+        }
+
+        .url-label {
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 0.5rem;
+        }
+
+        .url-value {
+            font-family: monospace;
+            color: hsl(var(--primary));
+            word-break: break-all;
+        }
+
+        .scan-timestamp {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px hsl(var(--primary) / 0.2);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .stat-malicious .stat-value {
+            color: hsl(var(--destructive));
+        }
+
+        .stat-suspicious .stat-value {
+            color: hsl(var(--warning));
+        }
+
+        .stat-total .stat-value {
+            color: hsl(var(--primary));
+        }
+
+        .stat-ssl .stat-value {
+            color: hsl(var(--success));
+        }
+
+        .analysis-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: hsl(var(--accent));
+        }
+
+        .analysis-card {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .analysis-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid hsl(var(--border) / 0.3);
+        }
+
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+
+        .analysis-label {
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .analysis-value {
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .issues-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .issues-list li {
+            padding: 0.25rem 0;
+            color: hsl(var(--destructive));
+            font-size: 0.875rem;
+        }
+
+        .issues-list li::before {
+            content: '⚠️';
+            margin-right: 0.5rem;
+        }
+
+        /* Engine Results Scrollable Container */
+        .engine-results-container {
+            margin-top: 1rem;
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .engine-results-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: hsl(var(--muted));
+            border-bottom: 1px solid hsl(var(--border));
+            font-weight: 600;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .engine-results-scroll {
+            max-height: 300px;
+            overflow-y: auto;
+            background: hsl(var(--card));
+        }
+
+        .engine-result-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid hsl(var(--border) / 0.2);
+            transition: background-color 0.2s ease;
+        }
+
+        .engine-result-item:hover {
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .engine-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .engine-name {
+            font-weight: 500;
+            color: hsl(var(--foreground));
+        }
+
+        .engine-verdict {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .verdict-malicious {
+            color: hsl(var(--destructive));
+        }
+
+        .verdict-suspicious {
+            color: hsl(var(--warning));
+        }
+
+        .verdict-harmless {
+            color: hsl(var(--success));
+        }
+
+        .verdict-undetected {
+            color: hsl(var(--muted-foreground));
+        }
+
+        /* Custom scrollbar for engine results */
+        .engine-results-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .engine-results-scroll::-webkit-scrollbar-track {
+            background: hsl(var(--muted));
+        }
+
+        .engine-results-scroll::-webkit-scrollbar-thumb {
+            background: hsl(var(--border));
+            border-radius: 4px;
+        }
+
+        .engine-results-scroll::-webkit-scrollbar-thumb:hover {
+            background: hsl(var(--primary));
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--gradient-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .back-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -10px hsl(var(--primary) / 0.6);
+        }
+
+        .back-button:hover::before {
+            left: 100%;
+        }
+
+        /* Loading and Error States */
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: hsl(var(--primary));
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-subtext {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        .error-message {
+            background: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border: 1px solid hsl(var(--destructive) / 0.3);
+            padding: 1rem;
+            border-radius: var(--radius);
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        /* Enhanced Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+            
+            .url-display {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+            
+            .url-value {
+                word-break: break-all;
+                font-size: 0.9rem;
+            }
+            
+            .analysis-card {
+                padding: 1rem;
+            }
+            
+            .analysis-item {
+                flex-direction: column;
+                gap: 0.25rem;
+                text-align: center;
+            }
+            
+            .section-title {
+                font-size: 1.25rem;
+                text-align: center;
+            }
+            
+            .back-button {
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.75rem;
+            }
+            
+            .title {
+                font-size: 1.25rem;
+            }
+            
+            .analysis-card {
+                padding: 0.75rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+            }
+            
+            .url-value {
+                font-size: 0.8rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .stat-label {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+                align-items: flex-start;
+                min-height: auto;
+            }
+            
+            .container {
+                padding: 1.5rem 1rem;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+            
+            .url-display {
+                font-size: 0.9rem;
+                word-break: break-all;
+                padding: 0.75rem;
+            }
+            
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 0.5rem 1rem;
+            }
+            
+            .threat-level {
+                font-size: 1.2rem;
+                padding: 1rem;
+            }
+            
+            .analysis-section {
+                margin-bottom: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .analysis-card {
+                padding: 1rem;
+            }
+            
+            .analysis-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+                padding: 0.5rem 0;
+            }
+            
+            .analysis-label {
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            
+            .analysis-value {
+                font-size: 0.9rem;
+                word-break: break-all;
+            }
+            
+            .issues-list {
+                margin-top: 0.5rem;
+                padding-left: 1rem;
+            }
+            
+            .issues-list li {
+                font-size: 0.85rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .engine-results-container {
+                margin-top: 1rem;
+            }
+            
+            .engine-results-header {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+            }
+            
+            .engine-result-item {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+            }
+            
+            .back-button {
+                display: block;
+                width: 100%;
+                text-align: center;
+                padding: 1rem;
+                margin-top: 2rem;
+            }
+        }
+
+        /* Extra small mobile devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem 0.25rem;
+            }
+            
+            .container {
+                padding: 1rem 0.75rem;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .url-display {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+            }
+            
+            .analysis-card {
+                padding: 0.75rem;
+            }
+            
+            .analysis-item {
+                padding: 0.25rem 0;
+            }
+            
+            .analysis-label {
+                font-size: 0.8rem;
+            }
+            
+            .analysis-value {
+                font-size: 0.85rem;
+            }
+        }
+</style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
-        <h1 class="text-2xl font-bold mb-4 flex items-center">
-            <span class="mr-2">📝</span> Scan Results
-        </h1>
-        <div class="flex items-center mb-4">
-            {% if result.threat_level == 'low' %}
-                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    Low Risk
-                </span>
-            {% elif result.threat_level == 'medium' %}
-                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full flex items-center">
-                    ⚠️ Medium Risk
-                </span>
-            {% else %}
-                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center">
-                    ❌ High Risk
-                </span>
-            {% endif %}
-        </div>
-        <div class="mb-2">
-            <span class="font-semibold">URL:</span>
-            <span class="bg-gray-100 px-2 py-1 rounded">{{ result.url }}</span>
-        </div>
-        <div class="mb-6 text-gray-500 text-sm">
-            Scanned: {{ result.scan_timestamp.strftime('%m/%d/%Y, %I:%M:%S %p') if result.scan_timestamp else '' }}
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-red-50 p-4 rounded text-center">
-                <div class="text-2xl font-bold text-red-600">{{ result.malicious_count }}</div>
-                <div class="text-sm text-red-700">Malicious Detections</div>
-            </div>
-            <div class="bg-yellow-50 p-4 rounded text-center">
-                <div class="text-2xl font-bold text-yellow-600">{{ result.suspicious_count }}</div>
-                <div class="text-sm text-yellow-700">Suspicious Detections</div>
-            </div>
-            <div class="bg-blue-50 p-4 rounded text-center">
-                <div class="text-2xl font-bold text-blue-600">{{ result.total_engines }}</div>
-                <div class="text-sm text-blue-700">Total Engines</div>
-            </div>
-            <div class="bg-green-50 p-4 rounded text-center">
-                <div class="text-2xl font-bold {% if result.ssl_valid %}text-green-600{% else %}text-red-600{% endif %}">
-                    {{ 'Valid' if result.ssl_valid else 'Invalid' }}
-                </div>
-                <div class="text-sm text-green-700">SSL Certificate</div>
-            </div>
-        </div>
-
-        <!-- URL Analysis -->
-        <div class="mb-4 border rounded p-4">
-            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🔗</span> URL Analysis</h2>
-            <div><b>Domain:</b> {{ result.detection_details.url_analysis.domain }}</div>
-            <div><b>Suspicious Score:</b> {{ result.detection_details.url_analysis.suspicious_score }}</div>
-            {% if result.detection_details.url_analysis.detected_issues %}
-                <div class="mt-2">
-                    <b>Issues:</b>
-                    <ul class="list-disc ml-6">
-                        {% for issue in result.detection_details.url_analysis.detected_issues %}
-                            <li>{{ issue }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Content Analysis -->
-        <div class="mb-4 border rounded p-4">
-            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">📄</span> Content Analysis</h2>
-            <div><b>Phishing Score:</b> {{ result.detection_details.content_analysis.phishing_score }}</div>
-            <div><b>Suspicious:</b> {{ 'Yes' if result.detection_details.content_analysis.is_suspicious else 'No' }}</div>
-            {% if result.detection_details.content_analysis.detected_indicators %}
-                <div class="mt-2">
-                    <b>Indicators:</b>
-                    <ul class="list-disc ml-6">
-                        {% for ind in result.detection_details.content_analysis.detected_indicators %}
-                            <li>{{ ind }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- VirusTotal Analysis -->
-        <div class="mb-4 border rounded p-4">
-            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🦠</span> VirusTotal Analysis</h2>
-            <div><b>Malicious:</b> {{ result.detection_details.virustotal_analysis.malicious_count }}</div>
-            <div><b>Suspicious:</b> {{ result.detection_details.virustotal_analysis.suspicious_count }}</div>
-            <div><b>Total Engines:</b> {{ result.detection_details.virustotal_analysis.total_engines }}</div>
-            {% if result.detection_details.virustotal_analysis.engines_results %}
-                <div class="mt-2">
-                    <b>Engine Results:</b>
-                    <ul class="list-disc ml-6">
-                        {% for engine, verdict in result.detection_details.virustotal_analysis.engines_results.items() %}
-                            <li>{{ engine }}: {{ verdict.category }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- SSL Certificate -->
-        <div class="mb-4 border rounded p-4">
-            <h2 class="font-semibold mb-2 flex items-center"><span class="mr-2">🔒</span> SSL Certificate</h2>
-            <div><b>Valid:</b> {{ 'Yes' if result.ssl_valid else 'No' }}</div>
-        </div>
+<body>
+    <div class="container">
+        <!-- Content will be loaded dynamically -->
     </div>
+
+    <!-- Include configuration for API base URL -->
+    <script src="config.js"></script>
+    
+    <script>
+        // Debug config loading
+        console.log('🔧 Config loading check:');
+        console.log('   window.API_BASE_URL:', window.API_BASE_URL);
+        console.log('   typeof window.API_BASE_URL:', typeof window.API_BASE_URL);
+        
+        // Check if we have scan data from server-side rendering
+        const hasServerData = false; // Default to false for client-side rendering
+        
+        if (!hasServerData) {
+            // No server data, fetch dynamically
+            loadScanResult();
+        }
+        
+        function getScanId() {
+            const params = new URLSearchParams(window.location.search);
+            const scanId = params.get('scan_id');
+            
+            console.log('🔍 Scan ID Extraction:');
+            console.log('  URL:', window.location.href);
+            console.log('  Search params:', window.location.search);
+            console.log('  Extracted scan_id:', scanId);
+            
+            // If no scan_id in URL, try to get from localStorage (for tunneled environments)
+            if (!scanId) {
+                const storedScanId = localStorage.getItem('webshield_scan_id');
+                if (storedScanId) {
+                    console.log('🔧 Using stored scan_id from localStorage:', storedScanId);
+                    return storedScanId;
+                }
+            }
+            
+            return scanId;
+        }
+        
+        async function loadScanResult() {
+            const scanId = getScanId();
+            console.log('🔍 loadScanResult called with scanId:', scanId);
+            const container = document.querySelector('.container');
+            
+            // Ensure API_BASE_URL is available
+            if (!window.API_BASE_URL) {
+                console.warn('⚠️ API_BASE_URL not found, using fallback');
+                window.API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api`;
+                console.log('🔧 Fallback API_BASE_URL:', window.API_BASE_URL);
+            }
+            
+            console.log('🔧 Final API_BASE_URL:', window.API_BASE_URL);
+            console.log('🔧 Current location:', window.location.href);
+            console.log('🔧 Current hostname:', window.location.hostname);
+            console.log('🔧 Current port:', window.location.port);
+            
+            if (!scanId) {
+                container.innerHTML = `
+                    <div class="header">
+                        <div class="logo-icon">🛡️</div>
+                        <div class="logo-text">WebShield</div>
+                    </div>
+                    <h1 class="title">📝 Scan Report</h1>
+                    <div class="error-message">
+                        <div style="margin-bottom: 1rem;">❌ No scan ID provided.</div>
+                        <div style="font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            This usually happens when you refresh the page or navigate directly to this URL.
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <a href="/" class="back-button">← Back to Home Page</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Show loading state
+            container.innerHTML = `
+                <div class="header">
+                    <div class="logo-icon">🛡️</div>
+                    <div class="logo-text">WebShield</div>
+                </div>
+                <h1 class="title">📝 Scan Report</h1>
+                <div class="loading-container">
+                    <div class="loading-text">⚡ Loading scan result...</div>
+                    <div class="loading-subtext">Please wait</div>
+                </div>
+            `;
+            
+            let attempts = 0;
+            const maxAttempts = 30;
+            
+            const pollResults = async () => {
+                try {
+                    const res = await fetch(`${window.API_BASE_URL}/scan/${scanId}`);
+                    const data = await res.json();
+                    
+                    console.log('📡 API Response:', data);
+                    console.log('📡 Response status:', res.status);
+                    console.log('📡 Data status:', data.status);
+                    console.log('📡 Has results:', !!data.results);
+                    
+                    if (!res.ok) {
+                        throw new Error(data.detail || 'Scan not found');
+                    }
+                    
+                    if (data.status === 'completed' && data.results) {
+                        // Show results
+                        console.log('✅ Scan completed, displaying results:', data.results);
+                        displayResults(data.results);
+                        return;
+                    } else if (data.status === 'error') {
+                        throw new Error('Scan failed');
+                    } else {
+                        // Still processing, continue polling
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            // Update loading message
+                            const loadingContainer = document.querySelector('.loading-container');
+                            if (loadingContainer) {
+                                loadingContainer.innerHTML = `
+                                    <div class="loading-text">⚡ Processing scan... (${attempts}/${maxAttempts})</div>
+                                    <div class="loading-subtext">Please wait</div>
+                                `;
+                            }
+                            setTimeout(pollResults, 2000); // Poll every 2 seconds
+                        } else {
+                            throw new Error('Scan timeout - please try again');
+                        }
+                    }
+                } catch (err) {
+                    console.error('❌ Error loading scan result:', err);
+                    let errorMessage = err.message || 'Error loading scan result.';
+                    
+                    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+                        errorMessage = 'Network connection failed. Please check your internet connection and try again.';
+                    }
+                    
+                    container.innerHTML = `
+                        <div class="header">
+                            <div class="logo-icon">🛡️</div>
+                            <div class="logo-text">WebShield</div>
+                        </div>
+                        <h1 class="title">📝 Scan Report</h1>
+                        <div class="error-message">
+                            <div style="margin-bottom: 1rem;">❌ ${errorMessage}</div>
+                            <div style="font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                                Please check your connection and try again.
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button onclick="location.reload()" class="back-button" style="margin-right: 1rem;">🔄 Retry</button>
+                            <a href="/" class="back-button">← Back to Home Page</a>
+                        </div>
+                    `;
+                }
+            };
+            
+            // Start polling
+            pollResults();
+        }
+        
+        function displayResults(result) {
+            console.log('🎨 displayResults called with:', result);
+            console.log('🎨 result type:', typeof result);
+            console.log('🎨 result keys:', Object.keys(result || {}));
+            
+            const container = document.querySelector('.container');
+            const safe = !result.is_malicious;
+            const statusClass = safe ? 'status-safe' : result.threat_level === 'high' ? 'status-danger' : 'status-warning';
+            const details = result.detection_details || {};
+            const urlAnalysis = details.url_analysis || {};
+            const sslAnalysis = details.ssl_analysis || {};
+            const contentAnalysis = details.content_analysis || {};
+            const vtAnalysis = details.virustotal_analysis || {};
+            
+            container.innerHTML = `
+                <div class="header">
+                    <div class="logo-icon">🛡️</div>
+                    <div class="logo-text">WebShield</div>
+                </div>
+                
+                <h1 class="title">📝 Scan Report</h1>
+                
+                <div class="status-badge ${statusClass}">
+                    ${safe ? '✅ Low Risk 🟢' : result.threat_level === 'medium' ? '⚠️ Medium Risk 🟡' : '❌ High Risk 🔴'}
+                </div>
+                
+                <div class="url-display">
+                    <div class="url-label">URL:</div>
+                    <div class="url-value">${result.url}</div>
+                </div>
+                
+                <div class="scan-timestamp">
+                    Scanned: ${result.scan_timestamp ? new Date(result.scan_timestamp).toLocaleString() : ''}
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card stat-malicious">
+                        <div class="stat-value">${result.malicious_count}</div>
+                        <div class="stat-label">Malicious Detections</div>
+                    </div>
+                    <div class="stat-card stat-suspicious">
+                        <div class="stat-value">${result.suspicious_count}</div>
+                        <div class="stat-label">Suspicious Detections</div>
+                    </div>
+                    <div class="stat-card stat-total">
+                        <div class="stat-value">${result.total_engines}</div>
+                        <div class="stat-label">Total Engines</div>
+                    </div>
+                    <div class="stat-card stat-ssl">
+                        <div class="stat-value">${result.ssl_valid ? 'Valid' : 'Invalid'}</div>
+                        <div class="stat-label">SSL Certificate</div>
+                    </div>
+                </div>
+
+                <!-- URL Analysis -->
+                <div class="analysis-section">
+                    <h2 class="section-title">🔗 URL Analysis</h2>
+                    <div class="analysis-card">
+                        <div class="analysis-item">
+                            <span class="analysis-label">Domain:</span>
+                            <span class="analysis-value">${urlAnalysis.domain || 'N/A'}</span>
+                        </div>
+                        <div class="analysis-item">
+                            <span class="analysis-label">Suspicious Score:</span>
+                            <span class="analysis-value">${urlAnalysis.suspicious_score || 'N/A'}</span>
+                        </div>
+                        ${urlAnalysis.detected_issues && urlAnalysis.detected_issues.length > 0 ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Issues:</span>
+                                <span class="analysis-value">${urlAnalysis.detected_issues.length} found</span>
+                            </div>
+                            <ul class="issues-list">
+                                ${urlAnalysis.detected_issues.map(issue => `<li>${issue}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- SSL Certificate Analysis -->
+                <div class="analysis-section">
+                    <h2 class="section-title">🔒 SSL Certificate Analysis</h2>
+                    <div class="analysis-card">
+                        <div class="analysis-item">
+                            <span class="analysis-label">Certificate Valid:</span>
+                            <span class="analysis-value">${sslAnalysis.valid === true ? 'Yes' : sslAnalysis.valid === false ? 'No' : 'N/A'}</span>
+                        </div>
+                        ${sslAnalysis.issuer ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Issuer:</span>
+                                <span class="analysis-value">${sslAnalysis.issuer}</span>
+                            </div>
+                        ` : ''}
+                        ${sslAnalysis.expires ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Valid Until:</span>
+                                <span class="analysis-value">${sslAnalysis.expires}</span>
+                            </div>
+                        ` : ''}
+                        ${sslAnalysis.error ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Error:</span>
+                                <span class="analysis-value">${sslAnalysis.error}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Content Analysis -->
+                <div class="analysis-section">
+                    <h2 class="section-title">📄 Content Analysis</h2>
+                    <div class="analysis-card">
+                        <div class="analysis-item">
+                            <span class="analysis-label">Phishing Score:</span>
+                            <span class="analysis-value">${contentAnalysis.phishing_score || 'N/A'}</span>
+                        </div>
+                        <div class="analysis-item">
+                            <span class="analysis-label">Suspicious:</span>
+                            <span class="analysis-value">${contentAnalysis.is_suspicious ? 'Yes' : 'No'}</span>
+                        </div>
+                        ${contentAnalysis.ml_enabled ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">ML Confidence:</span>
+                                <span class="analysis-value">${(contentAnalysis.ml_confidence * 100).toFixed(1)}%</span>
+                            </div>
+                        ` : ''}
+                        ${contentAnalysis.detected_indicators ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Analysis Type:</span>
+                                <span class="analysis-value">${contentAnalysis.ml_enabled ? 'ML Analysis' : 'Rule-based'}</span>
+                            </div>
+                            ${typeof contentAnalysis.detected_indicators === 'object' && !Array.isArray(contentAnalysis.detected_indicators) ? `
+                                <div class="analysis-item">
+                                    <span class="analysis-label">ML Indicators:</span>
+                                    <span class="analysis-value">${Object.keys(contentAnalysis.detected_indicators).length} features analyzed</span>
+                                </div>
+                                <ul class="issues-list">
+                                    ${Object.entries(contentAnalysis.detected_indicators)
+                                        .filter(([key, value]) => value && typeof value === 'object' && value.value !== undefined)
+                                        .sort((a, b) => (b[1].importance || 0) - (a[1].importance || 0))
+                                        .slice(0, 5)
+                                        .map(([key, value]) => `<li>${key.replace(/_/g, ' ')}: ${value.value} (${(value.importance * 100).toFixed(1)}% importance)</li>`)
+                                        .join('')}
+                                </ul>
+                            ` : Array.isArray(contentAnalysis.detected_indicators) ? `
+                                <div class="analysis-item">
+                                    <span class="analysis-label">Indicators:</span>
+                                    <span class="analysis-value">${contentAnalysis.detected_indicators.length} found</span>
+                                </div>
+                                <ul class="issues-list">
+                                    ${contentAnalysis.detected_indicators.map(ind => `<li>${ind}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- VirusTotal Analysis -->
+                <div class="analysis-section">
+                    <h2 class="section-title">🦠 VirusTotal Analysis</h2>
+                    <div class="analysis-card">
+                        ${vtAnalysis.error ? `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Status:</span>
+                                <span class="analysis-value" style="color: hsl(var(--warning));">⚠️ ${vtAnalysis.error}</span>
+                            </div>
+                        ` : `
+                            <div class="analysis-item">
+                                <span class="analysis-label">Malicious:</span>
+                                <span class="analysis-value">${vtAnalysis.malicious_count || 'N/A'}</span>
+                            </div>
+                            <div class="analysis-item">
+                                <span class="analysis-label">Suspicious:</span>
+                                <span class="analysis-value">${vtAnalysis.suspicious_count || 'N/A'}</span>
+                            </div>
+                            <div class="analysis-item">
+                                <span class="analysis-label">Total Engines:</span>
+                                <span class="analysis-value">${vtAnalysis.total_engines || 'N/A'}</span>
+                            </div>
+                            ${vtAnalysis.cached !== undefined ? `
+                                <div class="analysis-item">
+                                    <span class="analysis-label">Cache Status:</span>
+                                    <span class="analysis-value">${vtAnalysis.cached ? 'Cached' : 'Fresh Scan'}</span>
+                                </div>
+                            ` : ''}
+                        `}
+                    </div>
+                </div>
+
+                <!-- Back to Home Page -->
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="/" class="back-button">← Back to Home Page</a>
+                </div>
+            `;
+        }
+        
+        // Add error handling for back button
+        function handleBackButton(event) {
+            event.preventDefault();
+            console.log('🔙 Back button clicked');
+            console.log('📍 Current location:', window.location.href);
+            console.log('📁 Current pathname:', window.location.pathname);
+            console.log('🔗 Current href:', window.location.href);
+            
+            // Try multiple navigation strategies
+            const navigationStrategies = [
+                () => window.location.href = '/',
+                () => window.location.href = window.location.origin + '/',
+                () => window.location.href = 'index.html',
+                () => window.location.href = './index.html',
+                () => window.location.href = window.location.origin + '/index.html'
+            ];
+            
+            let currentStrategy = 0;
+            
+            function tryNavigation() {
+                if (currentStrategy >= navigationStrategies.length) {
+                    console.error('❌ All navigation strategies failed');
+                    alert('Navigation error. Please manually navigate to the homepage.');
+                    return;
+                }
+                
+                try {
+                    console.log(`🔄 Trying navigation strategy ${currentStrategy + 1}`);
+                    navigationStrategies[currentStrategy]();
+                } catch (error) {
+                    console.error(`❌ Strategy ${currentStrategy + 1} failed:`, error);
+                    currentStrategy++;
+                    setTimeout(tryNavigation, 100);
+                }
+            }
+            
+            tryNavigation();
+        }
+    </script>
 </body>
 </html> 
