@@ -1,293 +1,1278 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - WebShield</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);color:#fff}
-    .bubble{position:absolute;border-radius:50%;opacity:.15;animation:float 12s infinite ease-in-out}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-60px)}}
-  </style>
-</head>
-<body class="relative overflow-x-hidden">
-  <!-- decorative bubbles -->
-  <div class="bubble w-72 h-72 bg-cyan-400 top-20 left-20 blur-3xl"></div>
-  <div class="bubble w-96 h-96 bg-purple-500 bottom-20 right-20 blur-3xl"></div>
-
-  <!-- nav -->
-  <nav class="bg-slate-900/50 backdrop-blur-xl px-6 py-4 shadow-lg flex justify-between items-center">
-    <a href="dashboard.html" class="flex items-center gap-2">
-      <span class="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-xl">🛡️</span>
-      <span class="text-2xl font-bold text-cyan-400">WebShield</span>
-    </a>
-    <div class="space-x-6 text-sm">
-      <a href="community_alerts.html" class="hover:text-white">Community alerts</a>
-      <a href="history.html" class="hover:text-white">History</a>
-      <a href="profile.html" class="hover:text-white">Profile</a>
-    </div>
-  </nav>
-
-  <main class="max-w-5xl mx-auto px-6 py-12 space-y-10">
-
-    <!-- Welcome -->
-    <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl">
-      <h2 class="text-xl font-semibold text-cyan-300">Welcome back, <span id="userEmail">User</span>!</h2>
-      <p class="text-gray-400 text-sm mt-1">Ready to check any URL for threats.</p>
-    </div>
-
-    <!-- URL Scanner -->
-    <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl">
-      <h3 class="text-xl font-semibold text-cyan-300 mb-4">🔍 URL Threat Scanner</h3>
-      <div class="mb-4 p-4 bg-slate-900 rounded-xl border-2 border-cyan-500 flex flex-col sm:flex-row items-center gap-4">
-        <label for="urlInput" class="text-cyan-300 font-semibold mr-2">Enter URL to scan:</label>
-        <form id="urlForm" class="flex-1 flex flex-col sm:flex-row gap-4 w-full">
-          <input id="urlInput" type="text" placeholder="https://example.com"
-                 class="flex-1 px-4 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:ring-2 focus:ring-cyan-400 text-lg" required/>
-          <button type="submit"
-                  class="bg-cyan-500 hover:bg-cyan-600 px-8 py-2 rounded-lg text-white font-bold text-lg transition">
-            Scan URL
-          </button>
-        </form>
-      </div>
-      <div id="errorBox" class="mb-4 text-red-400 hidden"></div>
-      <div id="resultBox" class="mt-4 hidden"></div>
-    </div>
-
-    <!-- Report -->
-    <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl">
-      <h3 class="text-xl font-semibold text-red-300 mb-2">🚩 Report Suspicious Website</h3>
-      <p class="text-gray-400 text-sm mb-4">Help others—submit any malicious URL you encounter.</p>
-      <a href="report.html" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg font-semibold transition">
-        + Report Website
-      </a>
-    </div>
-
-    <!-- Quick Safety Tips -->
-    <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl">
-      <h3 class="text-xl font-semibold text-green-300 mb-4">⚡ Quick Safety Tips</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-900/50 p-3 rounded-lg">
-          <h4 class="text-cyan-400 font-semibold mb-2">🔒 SSL Check</h4>
-          <p class="text-gray-300 text-sm">Always verify HTTPS and padlock icon before entering data</p>
-        </div>
-        <div class="bg-slate-900/50 p-3 rounded-lg">
-          <h4 class="text-red-400 font-semibold mb-2">🎣 Phishing Signs</h4>
-          <p class="text-gray-300 text-sm">Watch for typosquatted domains and urgent language</p>
-        </div>
-        <div class="bg-slate-900/50 p-3 rounded-lg">
-          <h4 class="text-yellow-400 font-semibold mb-2">🔍 URL Analysis</h4>
-          <p class="text-gray-300 text-sm">Check for suspicious subdomains and random strings</p>
-        </div>
-        <div class="bg-slate-900/50 p-3 rounded-lg">
-          <h4 class="text-purple-400 font-semibold mb-2">📄 Content Check</h4>
-          <p class="text-gray-300 text-sm">Look for professional design and contact information</p>
-        </div>
-      </div>
-      <div class="mt-4 text-center">
-        <a href="community_alerts.html" class="text-cyan-400 hover:underline text-sm">View detailed safety guidelines →</a>
-      </div>
-    </div>
-
-    <!-- Safety Tips -->
-    <div class="bg-slate-800/50 backdrop-blur-xl p-6 rounded-xl">
-      <h3 class="text-xl font-semibold text-cyan-300 mb-4">🛡️ Web Safety Tips</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- SSL & Security -->
-        <div class="bg-slate-900/50 p-4 rounded-lg border border-cyan-500/20">
-          <h4 class="text-cyan-400 font-semibold mb-3">🔒 SSL & Security Verification</h4>
-          <ul class="text-gray-300 text-sm space-y-2">
-            <li>✅ Always check for HTTPS and padlock icon</li>
-            <li>✅ Verify SSL certificate validity</li>
-            <li>✅ Look for "Secure" in the address bar</li>
-            <li>✅ Check certificate issuer authenticity</li>
-            <li>⚠️ Avoid sites with SSL warnings</li>
-          </ul>
-        </div>
-        
-        <!-- Phishing Detection -->
-        <div class="bg-slate-900/50 p-4 rounded-lg border border-red-500/20">
-          <h4 class="text-red-400 font-semibold mb-3">🎣 Phishing Score Indicators</h4>
-          <ul class="text-gray-300 text-sm space-y-2">
-            <li>🔍 Check for suspicious URL patterns</li>
-            <li>🔍 Look for typosquatted domains</li>
-            <li>🔍 Verify sender email addresses</li>
-            <li>🔍 Check for urgent/emotional language</li>
-            <li>🔍 Verify payment/credit card forms</li>
-          </ul>
-        </div>
-        
-        <!-- URL Analysis -->
-        <div class="bg-slate-900/50 p-4 rounded-lg border border-yellow-500/20">
-          <h4 class="text-yellow-400 font-semibold mb-3">🔎 URL Pattern Analysis</h4>
-          <ul class="text-gray-300 text-sm space-y-2">
-            <li>🔍 Check for suspicious subdomains</li>
-            <li>🔍 Look for random character strings</li>
-            <li>🔍 Verify domain age and reputation</li>
-            <li>🔍 Check for redirect chains</li>
-            <li>🔍 Analyze URL structure patterns</li>
-          </ul>
-        </div>
-        
-        <!-- Content Analysis -->
-        <div class="bg-slate-900/50 p-4 rounded-lg border border-purple-500/20">
-          <h4 class="text-purple-400 font-semibold mb-3">📄 Content Analysis Tips</h4>
-          <ul class="text-gray-300 text-sm space-y-2">
-            <li>📝 Check for spelling/grammar errors</li>
-            <li>📝 Look for generic content</li>
-            <li>📝 Verify contact information</li>
-            <li>📝 Check for professional design</li>
-            <li>📝 Analyze page loading behavior</li>
-          </ul>
-        </div>
-      </div>
-      
-      <!-- Quick Safety Checklist -->
-      <div class="mt-6 bg-slate-900/50 p-4 rounded-lg border border-green-500/20">
-        <h4 class="text-green-400 font-semibold mb-3">✅ Quick Safety Checklist</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">HTTPS present</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">Domain looks legitimate</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">No urgent requests</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">Professional design</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">Contact info available</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-green-400">✓</span>
-            <span class="text-gray-300">No suspicious redirects</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <footer class="text-center text-sm text-gray-400 border-t border-slate-700 mt-12 py-4">
-    © 2025 WebShield · <a href="#" class="hover:underline">Help</a> · <a href="#" class="hover:underline">Privacy</a>
-  </footer>
-
-  <!-- JS -->
-  <script>
-    const BACKEND_URL = '/api';
-
-    // Set user name in welcome message
-    const userName = localStorage.getItem('user_name');
-    const userEmail = localStorage.getItem('user_email');
-    const welcomeName = userName && userName.trim() ? userName : (userEmail || 'User');
-    document.getElementById('userEmail').textContent = welcomeName;
-
-    document.getElementById('urlForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      // Prevent multiple submissions
-      const submitButton = e.target.querySelector('button[type="submit"]');
-      const originalText = submitButton.textContent;
-      submitButton.disabled = true;
-      submitButton.textContent = 'Scanning...';
-      
-      let url = document.getElementById('urlInput').value.trim();
-      const errorBox = document.getElementById('errorBox');
-      const resultBox = document.getElementById('resultBox');
-      errorBox.classList.add('hidden');
-      resultBox.classList.remove('hidden');
-      resultBox.innerHTML = '<span class="text-cyan-400">🔄 Initializing scan...</span>';
-      // Prepend https:// if missing
-      if (url && !/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-      }
-      // Improved URL validation
-      const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/i;
-      if (!url || !urlPattern.test(url)) {
-        errorBox.textContent = 'Please enter a valid URL (e.g., https://example.com).';
-        errorBox.classList.remove('hidden');
-        resultBox.classList.add('hidden');
-        return;
-      }
-      try {
-        const res = await fetch(`${BACKEND_URL}/scan`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Scan failed');
-        
-                 // Show scanning status
-         resultBox.innerHTML = '<span class="text-cyan-400">⚡ Scanning in progress...</span>';
-        
-        // Poll for results
-        if (data.scan_id) {
-                     let attempts = 0;
-           const maxAttempts = 150; // 150 attempts (120 seconds max for dev tunnels)
-          
-          const pollResults = async () => {
-            try {
-              const resultRes = await fetch(`${BACKEND_URL}/scan/${data.scan_id}`);
-              const resultData = await resultRes.json();
-              
-              if (resultData.status === 'completed' && resultData.results) {
-                // Redirect to scan result page
-                window.location.href = `scan_result.html?scan_id=${encodeURIComponent(data.scan_id)}`;
-                return;
-              } else if (resultData.status === 'error') {
-                throw new Error('Scan failed');
-              } else {
-                // Still processing, continue polling
-                attempts++;
-                if (attempts < maxAttempts) {
-                  setTimeout(pollResults, 200); // Poll every 200ms for dev tunnels
-                } else {
-                  throw new Error('Scan timeout - please try again');
-                }
-              }
-            } catch (err) {
-              errorBox.textContent = err.message || 'Failed to get scan results';
-              errorBox.classList.remove('hidden');
-              resultBox.classList.add('hidden');
-            }
-          };
-          
-          // Start polling after 2 seconds
-          setTimeout(pollResults, 2000);
-        } else {
-          // fallback: show result inline if scan_id missing
-          const { results } = data;
-          const safe = !results.is_malicious;
-          const color = safe ? 'text-green-400' : results.threat_level === 'high' ? 'text-red-400' : 'text-yellow-400';
-          resultBox.innerHTML = `
-            <div class="${color} font-semibold text-lg">
-              ${safe ? '✅ Safe' : `⚠️ ${results.threat_level.toUpperCase()} RISK`}
-            </div>
-            <div class="text-sm text-gray-300 mt-2">
-              Malicious engines: ${results.malicious_count}/${results.total_engines}<br>
-              SSL: ${results.ssl_valid ? 'Valid' : 'Invalid'}
-            </div>
-          `;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - WebShield</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        :root {
+            /* Color System */
+            --primary: 220 95% 55%;
+            --primary-glow: 220 90% 65%;
+            --primary-variant: 230 85% 45%;
+            --secondary: 240 5% 15%;
+            --accent: 45 100% 55%;
+            --success: 142 76% 36%;
+            --destructive: 0 72% 51%;
+            --warning: 38 92% 50%;
+            
+            /* Background Colors */
+            --background: 224 71% 4%;
+            --surface: 224 71% 6%;
+            --card: 224 71% 8%;
+            --muted: 215 27% 17%;
+            --border: 215 27% 20%;
+            
+            /* Text Colors */
+            --foreground: 213 31% 91%;
+            --muted-foreground: 215 20% 65%;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+            --gradient-cyber: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-variant)) 50%, hsl(var(--accent)) 100%);
+            --hero-gradient: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--surface)) 50%, hsl(var(--card)) 100%);
+            
+            /* Effects */
+            --glow: 0 0 30px hsl(var(--primary) / 0.3);
+            --glow-strong: 0 0 50px hsl(var(--primary) / 0.5);
+            --shadow-elegant: 0 10px 40px -10px hsl(var(--primary) / 0.2);
+            --border-glow: 0 0 20px hsl(var(--primary) / 0.2);
         }
-      } catch (err) {
-        errorBox.textContent = err.message || 'Scan error';
-        errorBox.classList.remove('hidden');
-        resultBox.classList.add('hidden');
-      } finally {
-        // Reset button state
-        submitButton.disabled = false;
-        submitButton.textContent = originalText;
-      }
-    });
-  </script>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: hsl(var(--surface) / 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid hsl(var(--border));
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: hsl(var(--primary));
+            text-decoration: none;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav a {
+            color: hsl(var(--muted-foreground));
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover {
+            color: hsl(var(--primary));
+        }
+
+        .nav a.active {
+            color: hsl(var(--primary));
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .btn-primary:hover {
+            box-shadow: var(--glow-strong);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: hsl(var(--foreground));
+            border: 1px solid hsl(var(--border));
+        }
+
+        .btn-outline:hover {
+            background: hsl(var(--surface));
+            border-color: hsl(var(--primary));
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: hsl(var(--muted-foreground));
+            padding: 0.5rem;
+        }
+
+        .btn-ghost:hover {
+            color: hsl(var(--foreground));
+            background: hsl(var(--surface));
+        }
+
+        /* Profile Dropdown Styles */
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px hsl(var(--background) / 0.8);
+            min-width: 200px;
+            z-index: 1000;
+            margin-top: 0.5rem;
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: hsl(var(--foreground));
+            text-decoration: none;
+            transition: background 0.2s;
+            border-bottom: 1px solid hsl(var(--border) / 0.5);
+        }
+
+        .profile-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .profile-menu-item:hover {
+            background: hsl(var(--surface));
+            color: hsl(var(--primary));
+        }
+
+        .profile-menu-item svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Dashboard Layout */
+        .main {
+            padding: 2rem 0;
+        }
+
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.25rem;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: hsl(var(--primary) / 0.3);
+            box-shadow: var(--border-glow);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: hsl(var(--primary) / 0.1);
+            border: 1px solid hsl(var(--primary) / 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: hsl(var(--primary));
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .trend-positive {
+            color: hsl(var(--success));
+        }
+
+        .trend-negative {
+            color: hsl(var(--destructive));
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-subtitle {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        /* Recent Scans */
+        .scan-item {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 1rem;
+            border: 1px solid hsl(var(--border) / 0.5);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .scan-item:hover {
+            border-color: hsl(var(--border));
+        }
+
+        .scan-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .scan-icon {
+            width: 32px;
+            height: 32px;
+            background: hsl(var(--primary) / 0.1);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: hsl(var(--primary));
+        }
+
+        .scan-details h4 {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .scan-meta {
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            gap: 1rem;
+        }
+
+        .scan-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .badge-safe {
+            background: hsl(var(--success) / 0.1);
+            color: hsl(var(--success));
+            border-color: hsl(var(--success) / 0.2);
+        }
+
+        .badge-warning {
+            background: hsl(var(--warning) / 0.1);
+            color: hsl(var(--warning));
+            border-color: hsl(var(--warning) / 0.2);
+        }
+
+        .badge-danger {
+            background: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border-color: hsl(var(--destructive) / 0.2);
+        }
+
+        /* Security Score */
+        .score-display {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: hsl(var(--primary));
+            margin-bottom: 0.5rem;
+        }
+
+        .score-label {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: hsl(var(--muted));
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            width: 94%;
+            transition: width 0.5s ease;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .metric-value {
+            font-weight: 500;
+        }
+
+        .metric-value.success {
+            color: hsl(var(--success));
+        }
+
+        .metric-value.warning {
+            color: hsl(var(--warning));
+        }
+
+        /* Sidebar Cards */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .quick-action {
+            width: 100%;
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        /* Threat Trends */
+        .threat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .threat-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .threat-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .threat-indicator.danger {
+            background: hsl(var(--destructive));
+        }
+
+        .threat-indicator.warning {
+            background: hsl(var(--warning));
+        }
+
+        .threat-indicator.primary {
+            background: hsl(var(--primary));
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.75rem;
+            }
+            
+            .dashboard-header {
+                text-align: center;
+                padding: 1rem 0;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .dashboard-header p {
+                font-size: 1rem;
+            }
+
+            .dashboard-actions {
+                justify-content: center;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .dashboard-actions .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.25rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.5rem;
+            }
+
+            .scan-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .scan-info {
+                text-align: center;
+            }
+            
+            .scan-url {
+                font-size: 0.9rem;
+                word-break: break-all;
+            }
+
+            .scan-actions {
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            
+            .scan-actions .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .header-content {
+                padding: 0.75rem 0;
+            }
+            
+            .nav {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.25rem;
+            }
+            
+            .scan-item {
+                padding: 0.75rem;
+            }
+            
+            .scan-actions .btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="index-html.html" class="logo">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                    WebShield
+                </a>
+                
+                <nav class="nav">
+                    <a href="#features">Features</a>
+                    <a href="dashboard.html" class="active">Dashboard</a>
+                    <a href="#extension">Extension</a>
+                    <a href="#about">About</a>
+                </nav>
+                
+                <div class="header-actions" id="header-actions">
+                    <!-- These will be dynamically updated based on login status -->
+                    <a href="login.html" class="btn btn-outline" id="signin-btn">Sign In</a>
+                    <a href="register.html" class="btn btn-primary" id="getstarted-btn">Get Started</a>
+                    <div id="profile-section" style="display: none;">
+                        <div class="profile-dropdown">
+                            <button class="btn btn-ghost" id="profile-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                                </svg>
+                                <span id="user-name">Profile</span>
+                            </button>
+                            <div class="profile-menu" id="profile-menu" style="display: none;">
+                                <a href="profile.html" class="profile-menu-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                        <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                                    </svg>
+                                    My Profile
+                                </a>
+                                <a href="#" class="profile-menu-item" id="logout-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                        <polyline points="16,17 21,12 16,7"/>
+                                        <line x1="21" y1="12" x2="9" y2="12"/>
+                                    </svg>
+                                    Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Security Dashboard</h1>
+                <p class="dashboard-subtitle">Monitor your web security status and scan history</p>
+                
+                <div class="dashboard-actions">
+                    <button class="btn btn-outline">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                            <path d="M21 3v5h-5"/>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                            <path d="M3 21v-5h5"/>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button class="btn btn-outline">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export Report
+                    </button>
+                    <a href="/" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        New Scan
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="urls-scanned">-</div>
+                    <div class="stat-label">URLs Scanned</div>
+                    <div class="stat-trend trend-positive">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/>
+                        </svg>
+                        <span id="urls-trend">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="threats-blocked">-</div>
+                    <div class="stat-label">Threats Blocked</div>
+                    <div class="stat-trend trend-negative">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22,17 13.5,8.5 8.5,13.5 2,7"/>
+                        </svg>
+                        <span id="threats-trend">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22,4 12,14.01 9,11.01"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="users-count">-</div>
+                    <div class="stat-label">Users</div>
+                    <div class="stat-trend trend-positive">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/>
+                        </svg>
+                        <span id="users-trend">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="uptime">99.99 %</div>
+                    <div class="stat-label">Uptime</div>
+                    <div class="stat-trend trend-positive">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/>
+                        </svg>
+                        Always online
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="content-grid">
+                <!-- Recent Scans -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12,6 12,12 16,14"/>
+                            </svg>
+                            Recent Scans
+                        </div>
+                        <div class="card-subtitle">Your latest URL security scans</div>
+                    </div>
+
+                    <div class="scan-item">
+                        <div class="scan-info">
+                            <div class="scan-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                                </svg>
+                            </div>
+                            <div class="scan-details">
+                                <h4>https://example-secure.com</h4>
+                                <div class="scan-meta">
+                                    <span>2 minutes ago</span>
+                                    <span>0.8s</span>
+                                    <span>0 threats</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="scan-actions">
+                            <span class="badge badge-safe">Safe</span>
+                            <button class="btn btn-ghost">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="scan-item">
+                        <div class="scan-info">
+                            <div class="scan-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                                </svg>
+                            </div>
+                            <div class="scan-details">
+                                <h4>https://suspicious-site.net</h4>
+                                <div class="scan-meta">
+                                    <span>15 minutes ago</span>
+                                    <span>1.2s</span>
+                                    <span>2 threats</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="scan-actions">
+                            <span class="badge badge-warning">Warning</span>
+                            <button class="btn btn-ghost">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="scan-item">
+                        <div class="scan-info">
+                            <div class="scan-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                                </svg>
+                            </div>
+                            <div class="scan-details">
+                                <h4>https://malicious-domain.org</h4>
+                                <div class="scan-meta">
+                                    <span>1 hour ago</span>
+                                    <span>2.1s</span>
+                                    <span>8 threats</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="scan-actions">
+                            <span class="badge badge-danger">Danger</span>
+                            <button class="btn btn-ghost">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid hsl(var(--border) / 0.5);">
+                        <button class="btn btn-outline" style="width: 100%;">View All Scans</button>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Security Score -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                                </svg>
+                                Security Score
+                            </div>
+                            <div class="card-subtitle">Your current protection level</div>
+                        </div>
+
+                        <div class="score-display">
+                            <div class="score-value">94</div>
+                            <div class="score-label">Excellent</div>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+
+                        <div>
+                            <div class="metric-row">
+                                <span>SSL Validation</span>
+                                <span class="metric-value success">100%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>Malware Detection</span>
+                                <span class="metric-value success">98%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>Phishing Protection</span>
+                                <span class="metric-value warning">85%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Quick Actions</div>
+                            <div class="card-subtitle">Common security tasks</div>
+                        </div>
+
+                        <div class="quick-actions">
+                            <button class="btn btn-outline quick-action">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
+                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                    <line x1="12" y1="17" x2="12" y2="21"/>
+                                </svg>
+                                Scan New URL
+                            </button>
+                            <button class="btn btn-outline quick-action">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10"/>
+                                    <line x1="12" y1="20" x2="12" y2="4"/>
+                                    <line x1="6" y1="20" x2="6" y2="14"/>
+                                </svg>
+                                View Reports
+                            </button>
+                            <button class="btn btn-outline quick-action">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                                </svg>
+                                API Settings
+                            </button>
+                            <button class="btn btn-outline quick-action">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7,10 12,15 17,10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Export Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Threat Trends -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/>
+                                    <polyline points="16,6 22,6 22,12"/>
+                                </svg>
+                                Threat Trends
+                            </div>
+                            <div class="card-subtitle">Last 30 days</div>
+                        </div>
+
+                        <div>
+                            <div class="threat-item">
+                                <div class="threat-info">
+                                    <div class="threat-indicator danger"></div>
+                                    <span>Malware</span>
+                                </div>
+                                <span class="metric-value">45%</span>
+                            </div>
+                            <div class="threat-item">
+                                <div class="threat-info">
+                                    <div class="threat-indicator warning"></div>
+                                    <span>Phishing</span>
+                                </div>
+                                <span class="metric-value">30%</span>
+                            </div>
+                            <div class="threat-item">
+                                <div class="threat-info">
+                                    <div class="threat-indicator primary"></div>
+                                    <span>Suspicious</span>
+                                </div>
+                                <span class="metric-value">25%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Check login status and update header accordingly
+        function checkLoginStatus() {
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+            
+            const signinBtn = document.getElementById('signin-btn');
+            const getstartedBtn = document.getElementById('getstarted-btn');
+            const profileSection = document.getElementById('profile-section');
+            const userNameSpan = document.getElementById('user-name');
+            
+            if (userEmail) {
+                // User is logged in
+                signinBtn.style.display = 'none';
+                getstartedBtn.style.display = 'none';
+                profileSection.style.display = 'block';
+                
+                // Set user name if available
+                if (userName) {
+                    userNameSpan.textContent = userName;
+                } else {
+                    userNameSpan.textContent = userEmail.split('@')[0]; // Use email prefix as name
+                }
+            } else {
+                // User is not logged in
+                signinBtn.style.display = 'inline-flex';
+                getstartedBtn.style.display = 'inline-flex';
+                profileSection.style.display = 'none';
+            }
+        }
+
+        // Profile dropdown functionality
+        function setupProfileDropdown() {
+            const profileBtn = document.getElementById('profile-btn');
+            const profileMenu = document.getElementById('profile-menu');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            // Toggle profile menu
+            profileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileMenu.style.display = profileMenu.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+                    profileMenu.style.display = 'none';
+                }
+            });
+            
+            // Logout functionality
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userToken');
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+            });
+        }
+
+        // Load user scan history if logged in
+        async function loadUserScans() {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) return;
+            
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/user_scans?email=${encodeURIComponent(userEmail)}&limit=5`);
+                if (response.ok) {
+                    const scans = await response.json();
+                    updateRecentScans(scans);
+                }
+            } catch (error) {
+                console.error('Failed to load user scans:', error);
+            }
+        }
+
+        // Update recent scans section
+        function updateRecentScans(scans) {
+            const recentScansContainer = document.querySelector('.card:first-of-type');
+            const scanItems = recentScansContainer.querySelectorAll('.scan-item');
+            
+            // Clear existing scan items (except the first 3 demo ones)
+            scanItems.forEach((item, index) => {
+                if (index >= 3) {
+                    item.remove();
+                }
+            });
+            
+            // Add user's recent scans
+            scans.forEach(scan => {
+                const scanItem = createScanItem(scan);
+                const container = recentScansContainer.querySelector('.card-header').nextElementSibling;
+                container.appendChild(scanItem);
+            });
+        }
+
+        // Create scan item element
+        function createScanItem(scan) {
+            const scanItem = document.createElement('div');
+            scanItem.className = 'scan-item';
+            
+            const threatLevel = scan.threat_level || 'low';
+            const badgeClass = threatLevel === 'high' ? 'badge-danger' : 
+                             threatLevel === 'medium' ? 'badge-warning' : 'badge-safe';
+            const badgeText = threatLevel === 'high' ? 'Danger' : 
+                            threatLevel === 'medium' ? 'Warning' : 'Safe';
+            
+            const timeAgo = new Date(scan.created_at).toLocaleDateString();
+            
+            scanItem.innerHTML = `
+                <div class="scan-info">
+                    <div class="scan-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="10" r="3"/>
+                            <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                        </svg>
+                    </div>
+                    <div class="scan-details">
+                        <h4>${scan.url}</h4>
+                        <div class="scan-meta">
+                            <span>${timeAgo}</span>
+                            <span>${scan.malicious_count || 0} threats</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="scan-actions">
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <button class="btn btn-ghost" onclick="viewScanDetails('${scan.scan_id}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            return scanItem;
+        }
+
+        // View scan details
+        function viewScanDetails(scanId) {
+            const redirectUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/scan_report.html?scan_id=${scanId}`;
+            window.location.href = redirectUrl;
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/dashboard-stats`);
+                if (response.ok) {
+                    const stats = await response.json();
+                    updateDashboardStats(stats);
+                } else {
+                    console.error('Failed to load dashboard stats');
+                    // Set default values if API fails
+                    updateDashboardStats({
+                        urls_scanned: 0,
+                        threats_blocked: 0,
+                        users: 0,
+                        uptime: '99.99 %'
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+                // Set default values if API fails
+                updateDashboardStats({
+                    urls_scanned: 0,
+                    threats_blocked: 0,
+                    users: 0,
+                    uptime: '99.99 %'
+                });
+            }
+        }
+
+        // Update dashboard statistics display
+        function updateDashboardStats(stats) {
+            // Format numbers with commas for better readability
+            const formatNumber = (num) => {
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            };
+
+            // Update URLs Scanned
+            const urlsScannedElement = document.getElementById('urls-scanned');
+            if (urlsScannedElement) {
+                urlsScannedElement.textContent = formatNumber(stats.urls_scanned);
+            }
+
+            // Update Threats Blocked
+            const threatsBlockedElement = document.getElementById('threats-blocked');
+            if (threatsBlockedElement) {
+                threatsBlockedElement.textContent = formatNumber(stats.threats_blocked);
+            }
+
+            // Update Users count
+            const usersCountElement = document.getElementById('users-count');
+            if (usersCountElement) {
+                usersCountElement.textContent = formatNumber(stats.users);
+            }
+
+            // Update Uptime (always 99.99%)
+            const uptimeElement = document.getElementById('uptime');
+            if (uptimeElement) {
+                uptimeElement.textContent = '99.99 %';
+            }
+
+            // Update trend text
+            const urlsTrendElement = document.getElementById('urls-trend');
+            if (urlsTrendElement) {
+                urlsTrendElement.textContent = `${stats.urls_scanned > 0 ? 'Active' : 'No'} scans`;
+            }
+
+            const threatsTrendElement = document.getElementById('threats-trend');
+            if (threatsTrendElement) {
+                threatsTrendElement.textContent = `${stats.threats_blocked > 0 ? 'Threats' : 'No'} detected`;
+            }
+
+            const usersTrendElement = document.getElementById('users-trend');
+            if (usersTrendElement) {
+                usersTrendElement.textContent = `${stats.users > 0 ? 'Active' : 'No'} users`;
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            setupProfileDropdown();
+            loadUserScans();
+            loadDashboardStats(); // Load dashboard statistics
+        });
+    </script>
+    
+    <!-- Include configuration for API base URL -->
+    <script src="config.js"></script>
 </body>
 </html>
