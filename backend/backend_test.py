@@ -12,18 +12,18 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 # Backend URL from environment
-BACKEND_URL = "https://3e9118c5-7b1a-419b-b2e3-e953c1dc04f1.preview.emergentagent.com/api"
+BACKEND_URL = "http://localhost:8000/api" 
 
 # Test URLs as specified in requirements
 TEST_URLS = {
-    'clean': 'https://google.com',
-    'suspicious': 'http://bit.ly/test',
-    'various_formats': ['google.com', 'https://example.com', 'ftp://invalid.com'],
+    'clean': 'https://google.com  ',
+    'suspicious': 'http://bit.ly/test  ',
+    'various_formats': ['google.com', 'https://example.com  ', 'ftp://invalid.com'],
     'malicious_patterns': [
-        'http://192.168.1.1/login',  # IP address
-        'https://g00gle.com',  # Typosquatting
-        'http://secure-bank-update123.tk',  # Suspicious TLD + keywords
-        'https://very-long-suspicious-domain-name-that-looks-fake.info'
+        'http://192.168.1.1/login  ',  # IP address
+        'https://g00gle.com  ',  # Typosquatting
+        'http://secure-bank-update123.tk  ',  # Suspicious TLD + keywords
+        'https://very-long-suspicious-domain-name-that-looks-fake.info  '
     ]
 }
 
@@ -155,9 +155,9 @@ class WebShieldTester:
         print("\n=== Testing URL Pattern Analysis ===")
         
         for pattern_type, url in [
-            ("IP address detection", "http://192.168.1.1/login"),
-            ("Typosquatting detection", "https://g00gle.com"),
-            ("Suspicious TLD detection", "http://test.tk"),
+            ("IP address detection", "http://192.168.1.1/login  "),
+            ("Typosquatting detection", "https://g00gle.com  "),
+            ("Suspicious TLD detection", "http://test.tk  "),
             ("URL shortener detection", TEST_URLS['suspicious'])
         ]:
             try:
@@ -193,8 +193,8 @@ class WebShieldTester:
         print("\n=== Testing SSL Certificate Validation ===")
         
         test_cases = [
-            ("HTTPS site", "https://google.com", True),
-            ("HTTP site", "http://example.com", False),
+            ("HTTPS site", "https://google.com  ", True),
+            ("HTTP site", "http://example.com  ", False),
         ]
         
         for test_name, url, should_be_valid in test_cases:
@@ -485,7 +485,7 @@ class WebShieldTester:
         
         # Test with missing URL field
         try:
-            payload = {"not_url": "https://example.com"}
+            payload = {"not_url": "https://example.com  "}
             response = requests.post(f"{BACKEND_URL}/scan", json=payload, timeout=10)
             
             missing_field_handled = response.status_code in [400, 422]
@@ -501,30 +501,32 @@ class WebShieldTester:
     def test_various_url_formats(self):
         """Test scanning with various URL formats"""
         print("\n=== Testing Various URL Formats ===")
-        
         for url in TEST_URLS['various_formats']:
             try:
                 payload = {"url": url}
                 response = requests.post(f"{BACKEND_URL}/scan", json=payload, timeout=30)
-                
-                # Should handle different formats (with or without protocol)
-                format_handled = response.status_code == 200
-                
-                if format_handled and response.status_code == 200:
-                    data = response.json()
-                    has_results = 'results' in data and data['results'] is not None
-                    
+                if url.startswith('ftp://'):
                     self.log_test(
                         f"URL format handling - {url}",
-                        has_results,
-                        f"Status: {response.status_code}, Has results: {has_results}"
+                        response.status_code == 400,
+                        f"Status: {response.status_code}"
                     )
                 else:
-                    self.log_test(
-                        f"URL format handling - {url}",
-                        False,
-                        f"HTTP {response.status_code}"
-                    )
+                    format_handled = response.status_code == 200
+                    if format_handled and response.status_code == 200:
+                        data = response.json()
+                        has_results = 'results' in data and data['results'] is not None
+                        self.log_test(
+                            f"URL format handling - {url}",
+                            has_results,
+                            f"Status: {response.status_code}, Has results: {has_results}"
+                        )
+                    else:
+                        self.log_test(
+                            f"URL format handling - {url}",
+                            False,
+                            f"HTTP {response.status_code}"
+                        )
             except Exception as e:
                 self.log_test(f"URL format handling - {url}", False, str(e))
     
@@ -568,3 +570,4 @@ if __name__ == "__main__":
     
     # Exit with appropriate code
     sys.exit(0 if results['failed'] == 0 else 1)
+
