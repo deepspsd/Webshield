@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS scans (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    user_email varchar(255)
 );
 
 -- Table: users
@@ -25,10 +26,12 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255),
-    profile_pic VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    profile_picture VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    phone_number VARCHAR(20),
+    email_notifications TINYINT(1) DEFAULT 1,
+    sms_notifications TINYINT(1) DEFAULT 0
 );
-
 -- Table: threat_reports
 CREATE TABLE IF NOT EXISTS threat_reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,17 +44,10 @@ CREATE TABLE IF NOT EXISTS threat_reports (
     FOREIGN KEY (scan_id) REFERENCES scans(scan_id) ON DELETE CASCADE
 );
 
--- Table: scan_statistics
-CREATE TABLE IF NOT EXISTS scan_statistics (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    date DATE DEFAULT (CURRENT_DATE),
-    total_scans INT DEFAULT 0,
-    malicious_detected INT DEFAULT 0,
-    clean_scans INT DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_date (date)
-);
+
 
 -- Indexes for performance
 CREATE INDEX idx_scans_created_at ON scans(created_at);
 CREATE INDEX idx_scans_scan_id ON scans(scan_id); 
+CREATE INDEX idx_user_email ON scans(user_email);
+
