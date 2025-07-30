@@ -50,7 +50,3 @@ CREATE TABLE IF NOT EXISTS threat_reports (
 CREATE INDEX idx_scans_created_at ON scans(created_at);
 CREATE INDEX idx_scans_scan_id ON scans(scan_id); 
 CREATE INDEX idx_user_email ON scans(user_email);
-
-ALTER TABLE users ADD COLUMN totp_secret VARCHAR(255);
-ALTER TABLE users ADD COLUMN totp_enabled BOOLEAN DEFAULT FALSE;
-
