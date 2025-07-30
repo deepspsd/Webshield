@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS scans (
     detection_details JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
-    scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_email varchar(255)
 );
 
